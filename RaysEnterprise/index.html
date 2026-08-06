@@ -1,0 +1,754 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+    <title>Ray's Enterprise</title>
+
+    <link rel="stylesheet" href="style.css">
+</head>
+
+<body>
+
+<header>
+    <img
+        class="catalog-logo"
+        src="rays-enterprise-logo.jpg"
+        alt="Ray's Enterprise logo"
+    >
+    <h1>Ray's Enterprise</h1>
+    <p>Your Home Essentials Store</p>
+</header>
+
+
+<!-- ==========================================
+     CONTACT INFORMATION
+========================================== -->
+
+<section class="contact-bar" aria-label="Store contact information">
+
+    <a href="tel:+254757598447" class="contact-item">
+        <span aria-hidden="true">&#128222;</span>
+        <span><strong>Call Us</strong> 0757 598 447</span>
+    </a>
+
+    <a
+        href="https://wa.me/254757598447"
+        class="contact-item"
+        target="_blank"
+        rel="noopener noreferrer"
+    >
+        <span aria-hidden="true">&#128172;</span>
+        <span><strong>WhatsApp Us</strong> 0757 598 447</span>
+    </a>
+
+    <div class="contact-item">
+        <span aria-hidden="true">&#128205;</span>
+        <span><strong>Our Location</strong> Amona Arcade, 1st Floor, Shop 14 &amp; 15</span>
+    </div>
+
+    <div class="contact-item">
+        <span aria-hidden="true">&#128338;</span>
+        <span><strong>Opening Hours</strong> 8am&ndash;8pm</span>
+    </div>
+
+</section>
+
+
+<!-- ==========================================
+     NAVIGATION
+========================================== -->
+
+<nav>
+
+    <a href="#products" onclick="showProducts(event)">
+        Products
+    </a>
+
+    <a href="#cart">
+        Cart
+    </a>
+
+    <a href="#checkout">
+        Checkout
+    </a>
+
+    <a href="#my-orders" onclick="showMyOrders(event)">
+        My Orders
+    </a>
+
+    <a href="#contact">
+        Contact
+    </a>
+
+    <a href="#reviews">
+        Reviews
+    </a>
+
+</nav>
+
+
+<main>
+
+    <!-- ==========================================
+         WELCOME
+    ========================================== -->
+
+    <section class="welcome-section">
+
+        <h2>Welcome to Ray's Enterprise</h2>
+
+        <p>
+            Discover quality products for your home,
+            kitchen and bedroom.
+        </p>
+
+        <button
+            type="button"
+            onclick="showProducts()"
+        >
+            View Products
+        </button>
+
+    </section>
+
+
+    <!-- ==========================================
+         PRODUCTS
+    ========================================== -->
+
+    <section
+        class="products-section"
+        id="products"
+    >
+
+        <h2>Featured Products</h2>
+
+
+        <div class="search-box">
+
+            <input
+                type="text"
+                id="searchInput"
+                placeholder="Search products..."
+                autocomplete="off"
+            >
+
+        </div>
+
+
+        <div class="categories">
+
+            <button
+                type="button"
+                onclick="filterProducts('all')"
+            >
+                All
+            </button>
+
+            <button
+                type="button"
+                onclick="filterProducts('kitchenware')"
+            >
+                Kitchenware
+            </button>
+
+            <button
+                type="button"
+                onclick="filterProducts('electronics')"
+            >
+                Electronics
+            </button>
+
+            <button
+                type="button"
+                onclick="filterProducts('curtains')"
+            >
+                Curtains & Curtain Rods
+            </button>
+
+            <button
+                type="button"
+                onclick="filterProducts('bedding')"
+            >
+                Bedding
+            </button>
+
+            <button
+                type="button"
+                onclick="filterProducts('carpets')"
+            >
+                Carpets
+            </button>
+
+            <button
+                type="button"
+                onclick="filterProducts('home-essentials')"
+            >
+                Home Essentials
+            </button>
+
+        </div>
+
+
+        <div
+            class="products"
+            id="product-container"
+        ></div>
+
+    </section>
+
+</main>
+
+
+<!-- ==========================================
+     SHOPPING CART
+========================================== -->
+
+<section
+    id="cart"
+    class="cart-section"
+>
+
+    <h2>Shopping Cart</h2>
+
+    <div id="cart-items">
+
+        <div class="empty-cart">
+
+            <h3>Your cart is empty</h3>
+
+            <p>
+                Add some products to get started.
+            </p>
+
+        </div>
+
+    </div>
+
+
+    <div class="cart-summary">
+
+        <p>
+            Items:
+            <strong id="cart-item-count">0</strong>
+        </p>
+
+        <h3>
+            Total:
+            <span>
+                KSh
+                <span id="cart-total">0</span>
+            </span>
+        </h3>
+
+
+        <button
+            type="button"
+            id="checkout-button"
+            onclick="showCheckout()"
+        >
+            Continue to Checkout
+        </button>
+
+    </div>
+
+</section>
+
+
+<!-- ==========================================
+     CHECKOUT
+========================================== -->
+
+<section
+    id="checkout"
+    class="checkout-section"
+    style="display: none;"
+>
+
+    <h2>Checkout</h2>
+
+    <p>
+        Enter your details and choose your preferred payment method.
+    </p>
+
+
+    <form id="checkoutForm">
+
+
+        <label for="customerName">
+            Full Name
+        </label>
+
+        <input
+            type="text"
+            id="customerName"
+            placeholder="Enter your full name"
+            autocomplete="name"
+            required
+        >
+
+
+        <label for="customerPhone">
+            Phone Number
+        </label>
+
+        <input
+            type="tel"
+            id="customerPhone"
+            placeholder="e.g. 0712345678"
+            autocomplete="tel"
+            required
+        >
+
+
+        <label for="customerLocation">
+            Delivery Location
+        </label>
+
+        <input
+            type="text"
+            id="customerLocation"
+            placeholder="Enter delivery location"
+            autocomplete="street-address"
+            required
+        >
+
+
+        <label for="customerNotes">
+            Order Notes
+        </label>
+
+        <textarea
+            id="customerNotes"
+            placeholder="Any additional information..."
+        ></textarea>
+
+
+        <!-- ==========================================
+             PAYMENT METHOD
+        ========================================== -->
+
+        <div class="payment-method-section">
+
+            <h3>
+                Choose Payment Method
+            </h3>
+
+
+            <div class="payment-methods">
+
+                <label class="payment-option">
+
+                    <input
+                        type="radio"
+                        name="paymentMethod"
+                        value="delivery"
+                        checked
+                    >
+
+                    <div class="payment-option-content">
+
+                        <strong>
+                            Pay on Delivery
+                        </strong>
+
+                        <span>
+                            Pay when your order is delivered.
+                        </span>
+
+                    </div>
+
+                </label>
+
+
+                <label class="payment-option">
+
+                    <input
+                        type="radio"
+                        name="paymentMethod"
+                        value="order"
+                    >
+
+                    <div class="payment-option-content">
+
+                        <strong>
+                            Pay on Order
+                        </strong>
+
+                        <span>
+                            Pay before your order is processed.
+                        </span>
+
+                    </div>
+
+                </label>
+
+            </div>
+
+        </div>
+
+
+        <!-- ==========================================
+             MPESA
+        ========================================== -->
+
+        <div
+            id="mpesa-payment"
+            class="mpesa-payment"
+            style="display: none;"
+        >
+
+            <h3>M-Pesa Payment</h3>
+
+            <p>
+                Send the order amount to the M-Pesa number below.
+            </p>
+
+            <div class="mpesa-details">
+
+                <p>
+                    <strong>Paybill / Till:</strong>
+
+                    <span id="mpesa-number">
+                        07XXXXXXXX
+                    </span>
+                </p>
+
+                <p>
+                    <strong>Amount:</strong>
+
+                    KSh
+                    <span id="mpesa-amount">
+                        0
+                    </span>
+                </p>
+
+            </div>
+
+
+            <p class="payment-note">
+                After making the payment, confirm your payment below.
+            </p>
+
+
+            <label class="payment-confirmation">
+
+                <input
+                    type="checkbox"
+                    id="paymentMade"
+                >
+
+                <span>
+                    I have made the M-Pesa payment.
+                </span>
+
+            </label>
+
+        </div>
+
+
+        <!-- ==========================================
+             CHECKOUT BUTTONS
+        ========================================== -->
+
+        <button
+            type="submit"
+            id="place-order-button"
+        >
+            Place Order
+        </button>
+
+
+        <button
+            type="button"
+            class="back-to-cart-button"
+            onclick="hideCheckout()"
+        >
+            ← Back to Cart
+        </button>
+
+    </form>
+
+</section>
+
+
+<!-- ==========================================
+     ORDER CONFIRMATION
+========================================== -->
+
+<section
+    id="order-confirmation"
+    class="order-confirmation"
+    style="display: none;"
+>
+
+    <div class="confirmation-box">
+
+        <div class="confirmation-icon">
+            ✓
+        </div>
+
+        <h2>
+            Order Placed Successfully!
+        </h2>
+
+        <p class="confirmation-message">
+            Thank you for shopping with Ray's Enterprise.
+        </p>
+
+
+        <div class="order-summary">
+
+            <h3>
+                Order Details
+            </h3>
+
+
+            <div class="order-detail-row">
+
+                <span>Order Number:</span>
+
+                <strong id="confirmation-order-number">
+                    -
+                </strong>
+
+            </div>
+
+
+            <div class="order-detail-row">
+
+                <span>Customer:</span>
+
+                <strong id="confirmation-customer-name">
+                    -
+                </strong>
+
+            </div>
+
+
+            <div class="order-detail-row">
+
+                <span>Phone:</span>
+
+                <strong id="confirmation-customer-phone">
+                    -
+                </strong>
+
+            </div>
+
+
+            <div class="order-detail-row">
+
+                <span>Delivery Location:</span>
+
+                <strong id="confirmation-location">
+                    -
+                </strong>
+
+            </div>
+
+
+            <div class="order-detail-row">
+
+                <span>Payment Method:</span>
+
+                <strong id="confirmation-payment-method">
+                    -
+                </strong>
+
+            </div>
+
+
+            <div class="order-detail-row">
+
+                <span>Status:</span>
+
+                <strong id="confirmation-status">
+                    Pending
+                </strong>
+
+            </div>
+
+        </div>
+
+
+        <div class="ordered-products">
+
+            <h3>
+                Items Ordered
+            </h3>
+
+            <div id="confirmation-products"></div>
+
+        </div>
+
+
+        <div class="confirmation-total-box">
+
+            <span>
+                Total Amount
+            </span>
+
+            <strong>
+
+                KSh
+                <span id="confirmation-total">
+                    0
+                </span>
+
+            </strong>
+
+        </div>
+
+
+        <button
+            type="button"
+            class="continue-shopping-button"
+            onclick="continueShopping()"
+        >
+            Continue Shopping
+        </button>
+
+    </div>
+
+</section>
+
+
+<!-- ==========================================
+     MY ORDERS
+========================================== -->
+
+<section
+    id="my-orders"
+    class="my-orders-section"
+    style="display: none;"
+>
+
+    <div class="my-orders-container">
+
+        <h2>
+            My Orders
+        </h2>
+
+        <p>
+            View your previous orders and order receipts below.
+        </p>
+
+
+        <div id="orders-container">
+
+            <!-- Orders are loaded by JavaScript -->
+
+        </div>
+
+
+        <button
+            type="button"
+            onclick="showProducts()"
+            class="back-to-products-button"
+        >
+            ← Continue Shopping
+        </button>
+
+    </div>
+
+</section>
+
+
+<!-- ==========================================
+     CUSTOMER REVIEWS
+========================================== -->
+
+<section id="reviews" class="reviews-section">
+
+    <div class="reviews-content">
+        <div>
+            <h2>Share Your Experience</h2>
+            <p>Your feedback helps Ray's Enterprise serve customers better.</p>
+        </div>
+
+        <form id="reviewForm" class="review-form">
+            <label for="reviewName">Your Name</label>
+            <input id="reviewName" type="text" required>
+
+            <label for="reviewProduct">Product (optional)</label>
+            <select id="reviewProduct">
+                <option value="">General feedback</option>
+            </select>
+
+            <label for="reviewRating">Rating</label>
+            <select id="reviewRating" required>
+                <option value="5">★★★★★ — Excellent</option>
+                <option value="4">★★★★☆ — Very good</option>
+                <option value="3">★★★☆☆ — Good</option>
+                <option value="2">★★☆☆☆ — Fair</option>
+                <option value="1">★☆☆☆☆ — Poor</option>
+            </select>
+
+            <label for="reviewComment">Comment</label>
+            <textarea id="reviewComment" required placeholder="Tell us about your experience..."></textarea>
+
+            <button type="submit">Send Feedback</button>
+        </form>
+    </div>
+
+</section>
+
+
+<!-- ==========================================
+     CONTACT FORM
+========================================== -->
+
+<section id="contact" class="contact-section">
+
+    <div class="contact-section-content">
+        <div>
+            <h2>Contact Ray's Enterprise</h2>
+            <p>Send an inquiry and we will reply through WhatsApp.</p>
+            <a
+                class="contact-whatsapp-button"
+                href="https://wa.me/254757598447?text=Hello%20Ray%27s%20Enterprise%2C%20I%27d%20like%20to%20make%20an%20inquiry."
+                target="_blank"
+                rel="noopener noreferrer"
+            >
+                Chat on WhatsApp
+            </a>
+        </div>
+
+        <form id="contactForm" class="contact-form">
+            <label for="contactName">Your Name</label>
+            <input id="contactName" type="text" required>
+
+            <label for="contactMessage">How can we help?</label>
+            <textarea id="contactMessage" required placeholder="Write your message..."></textarea>
+
+            <button type="submit">Send via WhatsApp</button>
+        </form>
+    </div>
+
+</section>
+
+
+<!-- ==========================================
+     FOOTER
+========================================== -->
+
+<footer>
+
+    <p>
+        © 2026 Ray's Enterprise.
+        All rights reserved.
+    </p>
+
+</footer>
+
+
+<script src="api-config.js"></script>
+<script src="script.js"></script>
+
+</body>
+
+</html>
