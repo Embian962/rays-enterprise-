@@ -1,0 +1,19 @@
+services:
+  - type: web
+    name: rays-enterprise-api
+    runtime: node
+    plan: free
+    # This repository intentionally has no package-lock.json. `npm ci` requires
+    # one and causes the deployment to fail before the server can start.
+    buildCommand: npm install
+    startCommand: npm start
+    healthCheckPath: /health
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: DATABASE_URL
+        sync: false
+      - key: ADMIN_API_KEY
+        generateValue: true
+      - key: FRONTEND_ORIGIN
+        sync: false
