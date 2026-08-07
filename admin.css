@@ -500,6 +500,38 @@ footer {
     transform: translateY(-3px);
 }
 
+.admin-login {
+    padding: 14px 6%;
+    background: #fff;
+    border-bottom: 1px solid #e5e7eb;
+}
+
+.admin-login form {
+    max-width: 900px;
+    margin: 0 auto;
+    display: flex;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 8px 12px;
+}
+
+.admin-login label {
+    font-size: 14px;
+    font-weight: 700;
+}
+
+.admin-login input {
+    width: 170px;
+    padding: 9px 10px;
+    border: 1px solid #cbd5e1;
+    border-radius: 7px;
+}
+
+#adminLoginStatus {
+    font-size: 14px;
+    color: #475569;
+}
+
 
 /* =========================
    CUSTOMER FEEDBACK

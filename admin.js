@@ -7,14 +7,103 @@
 // LOAD PRODUCTS
 // ==========================================
 
-let products =
-    JSON.parse(localStorage.getItem("products")) || [];
+let products = [];
+
+let adminToken = sessionStorage.getItem("rays-admin-token") || "";
+
+function getApiUrl() {
+    return (window.RAYS_API_URL || "").replace(/\/$/, "");
+}
+
+async function adminRequest(path, options = {}) {
+    if (!adminToken) {
+        alert("Sign in above before changing products.");
+        return null;
+    }
+
+    const response = await fetch(getApiUrl() + path, {
+        ...options,
+        headers: {
+            "Content-Type": "application/json",
+            "Authorization": "Bearer " + adminToken,
+            ...(options.headers || {})
+        }
+    });
+
+    if (!response.ok) {
+        const body = await response.json().catch(function() { return {}; });
+        if (response.status === 401) {
+            sessionStorage.removeItem("rays-admin-token");
+            adminToken = "";
+        }
+        throw new Error(body.error || "The server could not save this change.");
+    }
+
+    return response;
+}
+
+async function loadAdminProducts() {
+    const apiUrl = getApiUrl();
+    if (!apiUrl) return;
+
+    try {
+        const response = await fetch(apiUrl + "/api/products");
+        if (!response.ok) throw new Error("Could not load products.");
+        products = await response.json();
+        displayAdminProducts();
+        updateDashboard();
+    } catch (error) {
+        console.warn("Could not load products from the store server.", error);
+    }
+}
 
 
 // The filter currently selected from the dashboard. Keeping this value means
 // a status update refreshes the same view instead of unexpectedly switching
 // the administrator to a different category.
 let activeOrderFilter = "all-orders";
+
+const adminLoginForm = document.getElementById("adminLoginForm");
+const adminLoginStatus = document.getElementById("adminLoginStatus");
+const adminLogoutButton = document.getElementById("adminLogoutButton");
+
+function updateAdminLoginStatus() {
+    if (!adminLoginStatus) return;
+    adminLoginStatus.textContent = adminToken ? "Signed in" : "Sign in to add, edit, or delete products.";
+    if (adminLogoutButton) adminLogoutButton.style.display = adminToken ? "inline-block" : "none";
+}
+
+if (adminLoginForm) {
+    adminLoginForm.addEventListener("submit", async function(event) {
+        event.preventDefault();
+        try {
+            const response = await fetch(getApiUrl() + "/api/admin/login", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({
+                    username: document.getElementById("adminUsername").value,
+                    password: document.getElementById("adminPassword").value
+                })
+            });
+            const body = await response.json();
+            if (!response.ok) throw new Error(body.error || "Sign-in failed.");
+            adminToken = body.token;
+            sessionStorage.setItem("rays-admin-token", adminToken);
+            document.getElementById("adminPassword").value = "";
+            updateAdminLoginStatus();
+        } catch (error) {
+            alert(error.message);
+        }
+    });
+}
+
+if (adminLogoutButton) {
+    adminLogoutButton.addEventListener("click", function() {
+        sessionStorage.removeItem("rays-admin-token");
+        adminToken = "";
+        updateAdminLoginStatus();
+    });
+}
 
 
 // ==========================================
@@ -69,7 +158,7 @@ productForm.addEventListener("submit", function(event) {
     const reader = new FileReader();
 
 
-    reader.onload = function(event) {
+    reader.onload = async function(event) {
 
         const product = {
 
@@ -83,13 +172,19 @@ productForm.addEventListener("submit", function(event) {
         };
 
 
-        products.push(product);
+        try {
+            const response = await adminRequest("/api/products", {
+                method: "POST",
+                body: JSON.stringify(product)
+            });
 
+            if (!response) return;
 
-        localStorage.setItem(
-            "products",
-            JSON.stringify(products)
-        );
+            products.unshift(await response.json());
+        } catch (error) {
+            alert(error.message);
+            return;
+        }
 
 
         alert("Product added successfully!");
@@ -214,7 +309,7 @@ function displayAdminProducts() {
 // DELETE PRODUCT
 // ==========================================
 
-function deleteProduct(index) {
+async function deleteProduct(index) {
 
     const confirmDelete =
         confirm(
@@ -227,13 +322,25 @@ function deleteProduct(index) {
     }
 
 
-    products.splice(index, 1);
+    const product = products[index];
 
+    if (!product || !product.id) {
+        alert("This product has not been saved to the shared catalog yet.");
+        return;
+    }
 
-    localStorage.setItem(
-        "products",
-        JSON.stringify(products)
-    );
+    try {
+        const response = await adminRequest("/api/products/" + product.id, {
+            method: "DELETE"
+        });
+
+        if (!response) return;
+
+        products.splice(index, 1);
+    } catch (error) {
+        alert(error.message);
+        return;
+    }
 
 
     displayAdminProducts();
@@ -424,12 +531,28 @@ editProductForm.addEventListener(
 // SAVE EDITED PRODUCT
 // ==========================================
 
-function saveEditedProduct(index) {
+async function saveEditedProduct(index) {
 
-    localStorage.setItem(
-        "products",
-        JSON.stringify(products)
-    );
+    const product = products[index];
+
+    if (!product || !product.id) {
+        alert("This product has not been saved to the shared catalog yet.");
+        return;
+    }
+
+    try {
+        const response = await adminRequest("/api/products/" + product.id, {
+            method: "PUT",
+            body: JSON.stringify(product)
+        });
+
+        if (!response) return;
+
+        products[index] = await response.json();
+    } catch (error) {
+        alert(error.message);
+        return;
+    }
 
 
     displayAdminProducts();
@@ -962,6 +1085,10 @@ displayAdminProducts();
 displayOrders();
 
 updateDashboard();
+
+updateAdminLoginStatus();
+
+loadAdminProducts();
 // ==========================================
 // DASHBOARD CARD FILTERING
 // ==========================================

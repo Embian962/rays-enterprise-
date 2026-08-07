@@ -902,7 +902,23 @@ if (searchInput) {
 // LOAD PRODUCTS
 // ==========================================
 
-function loadProducts() {
+async function loadProducts() {
+
+    const apiUrl = (window.RAYS_API_URL || "").replace(/\/$/, "");
+
+    if (apiUrl) {
+        try {
+            const response = await fetch(apiUrl + "/api/products");
+
+            if (!response.ok) {
+                throw new Error("Could not load products from the store server.");
+            }
+
+            saveProducts(await response.json());
+        } catch (error) {
+            console.warn("Using saved catalog because the store server is unavailable.", error);
+        }
+    }
 
     const productContainer =
         document.getElementById(

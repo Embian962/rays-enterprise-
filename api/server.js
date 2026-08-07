@@ -1,5 +1,6 @@
 import "dotenv/config";
 import cors from "cors";
+import crypto from "crypto";
 import express from "express";
 import pg from "pg";
 
@@ -20,8 +21,35 @@ app.use(cors({ origin: process.env.FRONTEND_ORIGIN?.split(",") || true }));
 app.use(express.json({ limit: "8mb" }));
 
 const asyncRoute = handler => (req, res, next) => Promise.resolve(handler(req, res, next)).catch(next);
+
+const encodeTokenPart = value => Buffer.from(JSON.stringify(value)).toString("base64url");
+const signToken = value => crypto.createHmac("sha256", process.env.ADMIN_SESSION_SECRET || "").update(value).digest("base64url");
+const safeEqual = (left, right) => {
+  const leftBuffer = Buffer.from(left || "");
+  const rightBuffer = Buffer.from(right || "");
+  return leftBuffer.length === rightBuffer.length && crypto.timingSafeEqual(leftBuffer, rightBuffer);
+};
+const createAdminToken = () => {
+  const header = encodeTokenPart({ alg: "HS256", typ: "JWT" });
+  const payload = encodeTokenPart({ role: "admin", exp: Math.floor(Date.now() / 1000) + 60 * 60 * 8 });
+  const unsignedToken = `${header}.${payload}`;
+  return `${unsignedToken}.${signToken(unsignedToken)}`;
+};
+const hasValidAdminToken = token => {
+  if (!process.env.ADMIN_SESSION_SECRET || !token) return false;
+  const [header, payload, signature] = token.split(".");
+  if (!header || !payload || !signature || !safeEqual(signature, signToken(`${header}.${payload}`))) return false;
+  try {
+    const claims = JSON.parse(Buffer.from(payload, "base64url").toString("utf8"));
+    return claims.role === "admin" && Number(claims.exp) > Math.floor(Date.now() / 1000);
+  } catch {
+    return false;
+  }
+};
 const isAdmin = (req, res, next) => {
-  if (!process.env.ADMIN_API_KEY || req.get("x-admin-key") !== process.env.ADMIN_API_KEY) {
+  const token = req.get("authorization")?.replace(/^Bearer\s+/i, "");
+  const legacyApiKeyIsValid = process.env.ADMIN_API_KEY && safeEqual(req.get("x-admin-key"), process.env.ADMIN_API_KEY);
+  if (!hasValidAdminToken(token) && !legacyApiKeyIsValid) {
     return res.status(401).json({ error: "Admin authorization is required." });
   }
   next();
@@ -42,6 +70,17 @@ app.get("/health", asyncRoute(async (_req, res) => {
   await pool.query("SELECT 1");
   res.json({ ok: true });
 }));
+
+app.post("/api/admin/login", (req, res) => {
+  const { username, password } = req.body || {};
+  if (!process.env.ADMIN_USERNAME || !process.env.ADMIN_PASSWORD || !process.env.ADMIN_SESSION_SECRET) {
+    return res.status(503).json({ error: "Admin sign-in is not configured yet." });
+  }
+  if (!safeEqual(username, process.env.ADMIN_USERNAME) || !safeEqual(password, process.env.ADMIN_PASSWORD)) {
+    return res.status(401).json({ error: "Incorrect username or password." });
+  }
+  res.json({ token: createAdminToken(), expiresIn: 60 * 60 * 8 });
+});
 
 app.get("/api/products", asyncRoute(async (_req, res) => {
   const { rows } = await pool.query("SELECT * FROM products ORDER BY created_at DESC");

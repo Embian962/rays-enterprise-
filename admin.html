@@ -37,10 +37,22 @@
             Admin Dashboard
         </p>
 
-    </header>
+</header>
+
+<section class="admin-login" id="admin-login">
+    <form id="adminLoginForm">
+        <label for="adminUsername">Admin username</label>
+        <input id="adminUsername" autocomplete="username" required>
+        <label for="adminPassword">Password</label>
+        <input id="adminPassword" type="password" autocomplete="current-password" required>
+        <button type="submit">Sign in</button>
+        <button type="button" id="adminLogoutButton" style="display: none;">Sign out</button>
+        <span id="adminLoginStatus" aria-live="polite"></span>
+    </form>
+</section>
 
 
-    <main>
+<main>
 
 
         <!-- =========================
