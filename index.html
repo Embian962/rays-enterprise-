@@ -15,7 +15,7 @@
 <header>
     <img
         class="catalog-logo"
-        src="rays-enterprise-logo.jpg"
+        src="rays-enterprise-catalog-logo.jpg"
         alt="Ray's Enterprise logo"
     >
     <h1>Ray's Enterprise</h1>
@@ -67,8 +67,12 @@
         Products
     </a>
 
-    <a href="#cart">
+    <a href="#cart" onclick="showCart(event)">
         Cart
+    </a>
+
+    <a href="#my-list" onclick="showMyList(event)">
+        My List (<span id="my-list-count">0</span>)
     </a>
 
     <a href="#checkout">
@@ -201,6 +205,18 @@
     </section>
 
 </main>
+
+<section id="my-list" class="my-list-section" style="display: none;">
+
+    <h2>My List</h2>
+
+    <p class="my-list-intro">
+        Save products here and come back to buy them later.
+    </p>
+
+    <div id="my-list-items"></div>
+
+</section>
 
 
 <!-- ==========================================
@@ -375,7 +391,7 @@
                     <div class="payment-option-content">
 
                         <strong>
-                            Pay on Order
+                            M-Pesa Paybill
                         </strong>
 
                         <span>
@@ -404,16 +420,24 @@
             <h3>M-Pesa Payment</h3>
 
             <p>
-                Send the order amount to the M-Pesa number below.
+                Go to M-Pesa, select Pay Bill, then enter the details below.
             </p>
 
             <div class="mpesa-details">
 
                 <p>
-                    <strong>Paybill / Till:</strong>
+                    <strong>Paybill Number:</strong>
 
-                    <span id="mpesa-number">
-                        07XXXXXXXX
+                    <span id="mpesa-paybill">
+                        522533
+                    </span>
+                </p>
+
+                <p>
+                    <strong>Account Number:</strong>
+
+                    <span id="mpesa-account">
+                        8061372
                     </span>
                 </p>
 

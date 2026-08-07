@@ -10,6 +10,8 @@
 
 let cart = [];
 
+let myList = getMyList();
+
 let currentCategory = "all";
 
 
@@ -17,7 +19,8 @@ let currentCategory = "all";
 // MPESA
 // ==========================================
 
-const MPESA_NUMBER = "07XXXXXXXX";
+const MPESA_PAYBILL = "522533";
+const MPESA_ACCOUNT = "8061372";
 
 
 // ==========================================
@@ -173,6 +176,8 @@ function hideAllSections() {
 
         "cart",
 
+        "my-list",
+
         "checkout",
 
         "order-confirmation",
@@ -244,6 +249,140 @@ function showProducts(event) {
         });
 
     }
+
+}
+
+
+// ==========================================
+// MY LIST (SAVED PRODUCTS)
+// ==========================================
+
+function showCart(event) {
+
+    if (event) {
+        event.preventDefault();
+    }
+
+    hideAllSections();
+    displayCart();
+
+    const section = document.getElementById("cart");
+
+    if (section) {
+        section.style.display = "block";
+        section.scrollIntoView({ behavior: "smooth" });
+    }
+
+}
+
+function showMyList(event) {
+
+    if (event) {
+        event.preventDefault();
+    }
+
+    hideAllSections();
+    displayMyList();
+
+    const section = document.getElementById("my-list");
+
+    if (section) {
+        section.style.display = "block";
+        section.scrollIntoView({ behavior: "smooth" });
+    }
+
+}
+
+
+function addToMyList(productName) {
+
+    if (myList.includes(productName)) {
+        alert(productName + " is already in My List.");
+        return;
+    }
+
+    myList.push(productName);
+    saveMyList();
+    displayMyList();
+    alert(productName + " was saved to My List.");
+
+}
+
+
+function removeFromMyList(productName) {
+
+    myList = myList.filter(function(item) {
+        return item !== productName;
+    });
+
+    saveMyList();
+    displayMyList();
+
+}
+
+
+function displayMyList() {
+
+    const items = document.getElementById("my-list-items");
+    const count = document.getElementById("my-list-count");
+
+    if (count) {
+        count.textContent = myList.length;
+    }
+
+    if (!items) {
+        return;
+    }
+
+    items.innerHTML = "";
+
+    if (myList.length === 0) {
+        items.innerHTML = `
+            <div class="empty-cart">
+                <h3>Your list is empty</h3>
+                <p>Save products to find them easily later.</p>
+            </div>
+        `;
+        return;
+    }
+
+    const products = getProducts();
+
+    myList.forEach(function(productName) {
+
+        const product = products.find(function(item) {
+            return item.name === productName;
+        });
+
+        if (!product) {
+            return;
+        }
+
+        const item = document.createElement("article");
+        item.className = "my-list-item";
+        item.innerHTML = `
+            <img src="${product.image}" alt="${product.name}">
+            <div>
+                <h3>${product.name}</h3>
+                <p>KSh ${Number(product.price || 0).toLocaleString()}</p>
+            </div>
+            <div class="my-list-actions">
+                <button type="button" class="my-list-add-button">Add to Cart</button>
+                <button type="button" class="remove-cart-button">Remove</button>
+            </div>
+        `;
+
+        item.querySelector(".my-list-add-button").addEventListener("click", function() {
+            addToCart(product.name, "");
+        });
+
+        item.querySelector(".remove-cart-button").addEventListener("click", function() {
+            removeFromMyList(product.name);
+        });
+
+        items.appendChild(item);
+
+    });
 
 }
 
@@ -912,6 +1051,13 @@ function loadProducts() {
 
                 </button>
 
+                <button
+                    type="button"
+                    class="save-to-list-button"
+                >
+                    Save to My List
+                </button>
+
             </div>
 
         `;
@@ -921,6 +1067,17 @@ function loadProducts() {
             productCard.querySelector(
                 ".add-to-cart-button"
             );
+
+        const saveButton =
+            productCard.querySelector(
+                ".save-to-list-button"
+            );
+
+        if (saveButton) {
+            saveButton.addEventListener("click", function() {
+                addToMyList(product.name);
+            });
+        }
 
 
         if (
@@ -1041,9 +1198,14 @@ function updatePaymentAmount() {
         );
 
 
-    const numberElement =
+    const paybillElement =
         document.getElementById(
-            "mpesa-number"
+            "mpesa-paybill"
+        );
+
+    const accountElement =
+        document.getElementById(
+            "mpesa-account"
         );
 
 
@@ -1055,10 +1217,17 @@ function updatePaymentAmount() {
     }
 
 
-    if (numberElement) {
+    if (paybillElement) {
 
-        numberElement.textContent =
-            MPESA_NUMBER;
+        paybillElement.textContent =
+            MPESA_PAYBILL;
+
+    }
+
+    if (accountElement) {
+
+        accountElement.textContent =
+            MPESA_ACCOUNT;
 
     }
 
@@ -1951,6 +2120,25 @@ if (checkoutForm) {
 }
 
 
+function getMyList() {
+
+    return JSON.parse(
+        localStorage.getItem("my-list")
+    ) || [];
+
+}
+
+
+function saveMyList() {
+
+    localStorage.setItem(
+        "my-list",
+        JSON.stringify(myList)
+    );
+
+}
+
+
 // ==========================================
 // CUSTOMER REVIEWS
 // ==========================================
@@ -2072,5 +2260,7 @@ loadProducts();
 populateReviewProducts();
 
 displayCart();
+
+displayMyList();
 
 updatePaymentMethod();

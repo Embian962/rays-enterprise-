@@ -696,6 +696,22 @@ button:disabled {
     color: #111;
 }
 
+.save-to-list-button {
+    width: 100%;
+    margin-top: 9px;
+    padding: 11px;
+    background: white;
+    color: #191919;
+    border: 1px solid #191919;
+    box-shadow: none;
+}
+
+.save-to-list-button:hover {
+    background: #f5b400;
+    border-color: #f5b400;
+    color: #111;
+}
+
 
 /* =========================
    NO PRODUCTS
@@ -739,6 +755,74 @@ button:disabled {
 
 #cart h2 {
     text-align: center;
+}
+
+/* =========================
+   MY LIST
+========================= */
+
+.my-list-section {
+    width: min(1000px, 94%);
+    margin: 0 auto 55px;
+    padding: 35px 0;
+}
+
+.my-list-section h2,
+.my-list-intro {
+    text-align: center;
+}
+
+.my-list-intro {
+    margin: 8px 0 20px;
+    color: #666;
+}
+
+#my-list-items {
+    padding: 20px 25px;
+    border-radius: 17px;
+    background: white;
+    box-shadow: 0 6px 22px rgba(0, 0, 0, 0.06);
+}
+
+.my-list-item {
+    display: grid;
+    grid-template-columns: 76px 1fr auto;
+    align-items: center;
+    gap: 18px;
+    padding: 14px 0;
+    border-bottom: 1px solid #eee;
+}
+
+.my-list-item:last-child {
+    border-bottom: none;
+}
+
+.my-list-item img {
+    width: 76px;
+    height: 76px;
+    border-radius: 10px;
+    object-fit: cover;
+}
+
+.my-list-item h3 {
+    font-size: 17px;
+}
+
+.my-list-item p {
+    color: #666;
+}
+
+.my-list-actions {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-end;
+    gap: 7px;
+}
+
+.my-list-add-button {
+    padding: 9px 12px;
+    background: #f5b400;
+    color: #111;
 }
 
 #cart-items {
@@ -1398,6 +1482,26 @@ footer p {
 
     #cart-items {
         padding: 15px;
+    }
+
+    #my-list-items {
+        padding: 15px;
+    }
+
+    .my-list-item {
+        grid-template-columns: 58px 1fr;
+        gap: 12px;
+    }
+
+    .my-list-item img {
+        width: 58px;
+        height: 58px;
+    }
+
+    .my-list-actions {
+        grid-column: 1 / -1;
+        flex-direction: row;
+        align-items: center;
     }
 
 
