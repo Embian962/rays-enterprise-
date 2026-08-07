@@ -1,0 +1,17 @@
+services:
+  - type: web
+    name: rays-enterprise-api
+    runtime: node
+    plan: free
+    buildCommand: npm ci
+    startCommand: npm start
+    healthCheckPath: /health
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: DATABASE_URL
+        sync: false
+      - key: ADMIN_API_KEY
+        generateValue: true
+      - key: FRONTEND_ORIGIN
+        sync: false

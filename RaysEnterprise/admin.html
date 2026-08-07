@@ -1,0 +1,544 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+
+    <meta charset="UTF-8">
+
+    <meta
+        name="viewport"
+        content="width=device-width, initial-scale=1.0"
+    >
+
+    <title>Ray's Enterprise - Admin</title>
+
+    <link
+        rel="stylesheet"
+        href="admin.css"
+    >
+
+</head>
+
+
+<body>
+
+
+    <!-- =========================
+         HEADER
+    ========================== -->
+
+    <header>
+
+        <h1>
+            Ray's Enterprise
+        </h1>
+
+        <p>
+            Admin Dashboard
+        </p>
+
+    </header>
+
+
+    <main>
+
+
+        <!-- =========================
+             BUSINESS OVERVIEW
+        ========================== -->
+
+        <section class="dashboard">
+
+            <h2>
+                Business Overview
+            </h2>
+
+
+            <div class="dashboard-cards">
+
+
+                <!-- TOTAL PRODUCTS -->
+
+                <div
+                    class="dashboard-card"
+                    role="button"
+                    tabindex="0"
+                    onclick="openAdminPanel('products')"
+                >
+
+                    <h3>
+                        Total Products
+                    </h3>
+
+                    <p id="total-products">
+                        0
+                    </p>
+
+                </div>
+
+
+                <!-- TOTAL ORDERS -->
+
+                <div
+                    class="dashboard-card"
+                    role="button"
+                    tabindex="0"
+                    onclick="openAdminPanel('all-orders')"
+                >
+
+                    <h3>
+                        Total Orders
+                    </h3>
+
+                    <p id="total-orders">
+                        0
+                    </p>
+
+                </div>
+
+
+                <!-- PENDING ORDERS -->
+
+                <div
+                    class="dashboard-card"
+                    role="button"
+                    tabindex="0"
+                    onclick="openAdminPanel('Pending')"
+                >
+
+                    <h3>
+                        Pending Orders
+                    </h3>
+
+                    <p id="pending-orders">
+                        0
+                    </p>
+
+                </div>
+
+
+                <!-- PROCESSING ORDERS -->
+
+                <div
+                    class="dashboard-card"
+                    role="button"
+                    tabindex="0"
+                    onclick="openAdminPanel('Processing')"
+                >
+
+                    <h3>
+                        Processing
+                    </h3>
+
+                    <p id="processing-orders">
+                        0
+                    </p>
+
+                </div>
+
+
+                <!-- COMPLETED ORDERS -->
+
+                <div
+                    class="dashboard-card"
+                    role="button"
+                    tabindex="0"
+                    onclick="openAdminPanel('Completed')"
+                >
+
+                    <h3>
+                        Completed
+                    </h3>
+
+                    <p id="completed-orders">
+                        0
+                    </p>
+
+                </div>
+
+
+                <!-- TOTAL SALES -->
+
+                <div
+                    class="dashboard-card"
+                    role="button"
+                    tabindex="0"
+                    onclick="openAdminPanel('Completed')"
+                >
+
+                    <h3>
+                        Total Sales
+                    </h3>
+
+                    <p>
+                        KSh
+                        <span id="total-sales">
+                            0
+                        </span>
+                    </p>
+
+                </div>
+
+
+            </div>
+
+        </section>
+
+
+
+        <!-- =========================
+             ADD PRODUCT
+        ========================== -->
+
+        <section class="admin-section">
+
+            <h2>
+                Add New Product
+            </h2>
+
+
+            <form id="productForm">
+
+
+                <label for="productName">
+                    Product Name
+                </label>
+
+                <input
+                    type="text"
+                    id="productName"
+                    placeholder="Enter product name"
+                    required
+                >
+
+
+
+                <label for="productPrice">
+                    Price (KSh)
+                </label>
+
+                <input
+                    type="number"
+                    id="productPrice"
+                    placeholder="Enter price"
+                    min="0"
+                    required
+                >
+
+
+
+                <label for="productStock">
+                    Stock
+                </label>
+
+                <input
+                    type="number"
+                    id="productStock"
+                    placeholder="Enter stock quantity"
+                    min="0"
+                    required
+                >
+
+
+
+                <label for="productCategory">
+                    Category
+                </label>
+
+                <select
+                    id="productCategory"
+                    required
+                >
+
+                    <option value="">
+                        Select category
+                    </option>
+
+                    <option value="kitchenware">
+                        Kitchenware
+                    </option>
+
+                    <option value="electronics">
+                        Electronics
+                    </option>
+
+                    <option value="curtains">
+                        Curtains & Curtain Rods
+                    </option>
+
+                    <option value="bedding">
+                        Bedding
+                    </option>
+
+                    <option value="carpets">
+                        Carpets
+                    </option>
+
+                    <option value="home-essentials">
+                        Home Essentials
+                    </option>
+
+                </select>
+
+
+
+                <label for="productColors">
+                    Available Colours
+                </label>
+
+                <input
+                    type="text"
+                    id="productColors"
+                    placeholder="e.g. Black, Blue, Red"
+                >
+
+                <small>
+                    Separate each colour with a comma. Leave blank if the product has no colour choices.
+                </small>
+
+
+                <label for="productImage">
+                    Product Image
+                </label>
+
+                <input
+                    type="file"
+                    id="productImage"
+                    accept="image/*"
+                    required
+                >
+
+
+
+                <button type="submit">
+                    Add Product
+                </button>
+
+
+            </form>
+
+        </section>
+
+
+
+        <!-- =========================
+             SAVED PRODUCTS
+        ========================== -->
+
+        <section class="admin-products">
+
+            <h2>
+                Your Products
+            </h2>
+
+
+            <div id="admin-product-list"></div>
+
+        </section>
+
+
+
+        <!-- =========================
+             EDIT PRODUCT
+        ========================== -->
+
+        <section
+            class="edit-section"
+            id="edit-section"
+            style="display: none;"
+        >
+
+            <h2>
+                Edit Product
+            </h2>
+
+
+            <form id="editProductForm">
+
+
+                <input
+                    type="hidden"
+                    id="editProductIndex"
+                >
+
+
+
+                <label for="editProductName">
+                    Product Name
+                </label>
+
+                <input
+                    type="text"
+                    id="editProductName"
+                    required
+                >
+
+
+
+                <label for="editProductPrice">
+                    Price (KSh)
+                </label>
+
+                <input
+                    type="number"
+                    id="editProductPrice"
+                    min="0"
+                    required
+                >
+
+
+
+                <label for="editProductStock">
+                    Stock
+                </label>
+
+                <input
+                    type="number"
+                    id="editProductStock"
+                    min="0"
+                    required
+                >
+
+
+
+                <label for="editProductCategory">
+                    Category
+                </label>
+
+                <select
+                    id="editProductCategory"
+                    required
+                >
+
+                    <option value="kitchenware">
+                        Kitchenware
+                    </option>
+
+                    <option value="electronics">
+                        Electronics
+                    </option>
+
+                    <option value="curtains">
+                        Curtains & Curtain Rods
+                    </option>
+
+                    <option value="bedding">
+                        Bedding
+                    </option>
+
+                    <option value="carpets">
+                        Carpets
+                    </option>
+
+                    <option value="home-essentials">
+                        Home Essentials
+                    </option>
+
+                </select>
+
+
+
+                <label for="editProductColors">
+                    Available Colours
+                </label>
+
+                <input
+                    type="text"
+                    id="editProductColors"
+                    placeholder="e.g. Black, Blue, Red"
+                >
+
+                <small>
+                    Separate each colour with a comma. Leave blank if the product has no colour choices.
+                </small>
+
+
+                <label for="editProductImage">
+                    Product Image
+                </label>
+
+                <input
+                    type="file"
+                    id="editProductImage"
+                    accept="image/*"
+                >
+
+
+
+                <button type="submit">
+                    Save Changes
+                </button>
+
+
+                <button
+                    type="button"
+                    onclick="cancelEdit()"
+                >
+                    Cancel
+                </button>
+
+
+            </form>
+
+        </section>
+
+
+
+        <!-- =========================
+             CUSTOMER ORDERS
+        ========================== -->
+
+       <section
+    class="admin-orders"
+    style="display: none;"
+>
+
+    <div class="orders-panel-header">
+
+        <h2>
+            Customer Orders
+        </h2>
+
+        <button
+            type="button"
+            onclick="hideOrdersPanel()"
+        >
+            Close Orders
+        </button>
+
+    </div>
+
+
+    <div id="orders-list"></div>
+
+</section>
+
+
+        <!-- =========================
+             CUSTOMER FEEDBACK
+        ========================== -->
+
+        <section class="admin-reviews">
+
+            <h2>Customer Feedback</h2>
+
+            <div id="admin-review-list"></div>
+
+        </section>
+
+
+    </main>
+
+
+
+    <!-- =========================
+         JAVASCRIPT
+    ========================== -->
+
+    <script src="api-config.js"></script>
+    <script src="admin.js"></script>
+
+
+</body>
+
+</html>
