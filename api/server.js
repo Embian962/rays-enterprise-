@@ -67,7 +67,7 @@ app.get("/", (_req, res) => {
 });
 
 app.get("/health", asyncRoute(async (_req, res) => {
-  await pool.query("SELECT 1");
+  app.use(cors({ origin: process.env.FRONTEND_ORIGIN?.split(",") || true }));
   res.json({ ok: true });
 }));
 
