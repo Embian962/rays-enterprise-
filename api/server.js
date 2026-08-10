@@ -1,4 +1,4 @@
-app.use(cors({ origin: process.env.FRONTEND_ORIGIN?.split(",") || true }));
+import "dotenv/config";
 import cors from "cors";
 import crypto from "crypto";
 import express from "express";
@@ -17,7 +17,18 @@ const pool = new Pool({
   ssl: process.env.NODE_ENV === "production" ? { rejectUnauthorized: false } : false
 });
 
-await pool.query(`   ADD COLUMN IF NOT EXISTS sale_price NUMERIC(12, 2);   ADD COLUMN IF NOT EXISTS updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW();`);app.use(cors({ origin: process.env.FRONTEND_ORIGIN?.split(",") || true }));({ origin: process.env.FRONTEND_ORIGIN?.split(",") || true }));
+const allowedOrigins = new Set([
+  ...(process.env.FRONTEND_ORIGIN || "").split(",").map(origin => origin.trim()).filter(Boolean),
+  "http://localhost:5500",
+  "http://127.0.0.1:5500"
+]);
+app.use(cors({
+  origin(origin, callback) {
+    // Requests from server-side tools have no Origin header. The two local
+    // origins above allow the static frontend to be tested with Live Server.
+    callback(null, !origin || allowedOrigins.size === 0 || allowedOrigins.has(origin));
+  }
+}));
 app.use(express.json({ limit: "8mb" }));
 
 const asyncRoute = handler => (req, res, next) => Promise.resolve(handler(req, res, next)).catch(next);
@@ -32,13 +43,13 @@ const safeEqual = (left, right) => {
 const createAdminToken = () => {
   const header = encodeTokenPart({ alg: "HS256", typ: "JWT" });
   const payload = encodeTokenPart({ role: "admin", exp: Math.floor(Date.now() / 1000) + 60 * 60 * 8 });
-  const unsignedToken = `${header}.${payload}`;
-  return `${unsignedToken}.${signToken(unsignedToken)}`;
+  const unsignedToken = header + "." + payload;
+  return unsignedToken + "." + signToken(unsignedToken);
 };
 const hasValidAdminToken = token => {
   if (!process.env.ADMIN_SESSION_SECRET || !token) return false;
   const [header, payload, signature] = token.split(".");
-  if (!header || !payload || !signature || !safeEqual(signature, signToken(`${header}.${payload}`))) return false;
+  if (!header || !payload || !signature || !safeEqual(signature, signToken(header + "." + payload))) return false;
   try {
     const claims = JSON.parse(Buffer.from(payload, "base64url").toString("utf8"));
     return claims.role === "admin" && Number(claims.exp) > Math.floor(Date.now() / 1000);
@@ -47,7 +58,7 @@ const hasValidAdminToken = token => {
   }
 };
 const isAdmin = (req, res, next) => {
-  const token = req.get("authorization")?.replace(/^Bearer\s+/i, "");
+  const token = req.get("authorization")?.replace(/^Bearer\\s+/i, "");
   const legacyApiKeyIsValid = process.env.ADMIN_API_KEY && safeEqual(req.get("x-admin-key"), process.env.ADMIN_API_KEY);
   if (!hasValidAdminToken(token) && !legacyApiKeyIsValid) {
     return res.status(401).json({ error: "Admin authorization is required." });
@@ -55,8 +66,6 @@ const isAdmin = (req, res, next) => {
   next();
 };
 
-// Render hosts the API, while Vercel hosts the storefront. This makes a visit
-// to the Render URL useful instead of returning Express's default 404 page.
 app.get("/", (_req, res) => {
   res.json({
     service: "Ray's Enterprise API",
@@ -67,7 +76,7 @@ app.get("/", (_req, res) => {
 });
 
 app.get("/health", asyncRoute(async (_req, res) => {
-  app.use(cors({ origin: process.env.FRONTEND_ORIGIN?.split(",") || true }));
+  await pool.query("SELECT 1");
   res.json({ ok: true });
 }));
 
@@ -125,7 +134,7 @@ app.post("/api/orders", asyncRoute(async (req, res) => {
     await client.query("BEGIN");
     for (const item of products) {
       const update = await client.query("UPDATE products SET stock = stock - $1, updated_at=NOW() WHERE id=$2 AND stock >= $1 RETURNING id", [item.quantity, item.id]);
-      if (!update.rowCount) throw new Error(`Insufficient stock for product ${item.id}.`);
+      if (!update.rowCount) throw new Error("Insufficient stock for product " + item.id + ".");
     }
     const { rows } = await client.query(
       "INSERT INTO orders (customer_name, customer_phone, customer_location, customer_notes, products, total, payment_method, payment_status) VALUES ($1,$2,$3,$4,$5,$6,$7,$8) RETURNING *",
@@ -178,4 +187,4 @@ app.use((error, _req, res, _next) => {
   res.status(500).json({ error: "The server could not complete that request." });
 });
 
-app.listen(port, () => console.log(`Ray's Enterprise API listening on port ${port}`));
+app.listen(port, () => console.log("Ray's Enterprise API listening on port " + port));
