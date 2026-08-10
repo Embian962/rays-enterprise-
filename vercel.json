@@ -14,5 +14,11 @@
         }
       ]
     }
+  ],
+  "rewrites": [
+    {
+      "source": "/api/:path*",
+      "destination": "https://rays-enterprise-l7qp.onrender.com/api/:path*"
+    }
   ]
 }
