@@ -17,7 +17,7 @@ const pool = new Pool({
   ssl: process.env.NODE_ENV === "production" ? { rejectUnauthorized: false } : false
 });
 
-await pool.query(`  ALTER TABLE products ADD COLUMN IF NOT EXISTS sale_price NUMERIC(12, 2);  ALTER TABLE products ADD COLUMN IF NOT EXISTS updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW();`);app.use(cors({ origin: process.env.FRONTEND_ORIGIN?.split(",") || true }));({ origin: process.env.FRONTEND_ORIGIN?.split(",") || true }));
+await pool.query(`   ADD COLUMN IF NOT EXISTS sale_price NUMERIC(12, 2);   ADD COLUMN IF NOT EXISTS updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW();`);app.use(cors({ origin: process.env.FRONTEND_ORIGIN?.split(",") || true }));({ origin: process.env.FRONTEND_ORIGIN?.split(",") || true }));
 app.use(express.json({ limit: "8mb" }));
 
 const asyncRoute = handler => (req, res, next) => Promise.resolve(handler(req, res, next)).catch(next);
