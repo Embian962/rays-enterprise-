@@ -559,3 +559,9 @@ footer {
     color: #e2a400;
     font-size: 19px;
 }
+
+
+/* Keep administrative data out of view until authentication succeeds. */
+body:not(.admin-authenticated) main {
+    display: none;
+}
