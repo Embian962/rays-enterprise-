@@ -1,4 +1,4 @@
-import "dotenv/config";
+app.use(cors({ origin: process.env.FRONTEND_ORIGIN?.split(",") || true }));
 import cors from "cors";
 import crypto from "crypto";
 import express from "express";
