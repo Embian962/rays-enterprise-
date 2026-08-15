@@ -1,9 +1,10 @@
 (function () {
     function updateAdminAccess() {
-        document.body.classList.toggle(
-            "admin-authenticated",
-            Boolean(sessionStorage.getItem("rays-admin-token"))
-        );
+        const authenticated = Boolean(sessionStorage.getItem("rays-admin-token"));
+        document.body.classList.toggle("admin-authenticated", authenticated);
+
+        const loginPanel = document.getElementById("admin-login");
+        if (loginPanel) loginPanel.hidden = authenticated;
     }
 
     updateAdminAccess();
