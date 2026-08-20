@@ -734,3 +734,7 @@ body:not(.admin-authenticated) main {
 .open-product-form-button { border: 0; border-radius: 9px; padding: 10px 14px; color: #fff; background: #0f766e; font-weight: 800; cursor: pointer; }
 .open-product-form-button:hover { background: #115e59; }
 @media (max-width: 520px) { .admin-products-heading { align-items: flex-start; flex-direction: column; } }
+
+.product-form-actions { display: flex; gap: 10px; }
+.cancel-product-form-button { color: #334155; background: #e2e8f0; }
+.cancel-product-form-button:hover { background: #cbd5e1; }

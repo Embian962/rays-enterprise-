@@ -141,12 +141,21 @@ const productForm =
     document.getElementById("productForm");
 const addProductSection = document.getElementById("add-product-section");
 const openProductFormButton = document.getElementById("openProductFormButton");
+const cancelProductFormButton = document.getElementById("cancelProductFormButton");
 
 if (openProductFormButton && addProductSection) {
     openProductFormButton.addEventListener("click", function() {
         addProductSection.hidden = false;
         addProductSection.scrollIntoView({ behavior: "smooth", block: "start" });
         setTimeout(function() { document.getElementById("productName")?.focus(); }, 350);
+    });
+}
+
+if (cancelProductFormButton && addProductSection && productForm) {
+    cancelProductFormButton.addEventListener("click", function() {
+        productForm.reset();
+        addProductSection.hidden = true;
+        openProductFormButton?.focus();
     });
 }
 
