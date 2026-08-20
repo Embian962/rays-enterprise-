@@ -1657,7 +1657,7 @@ async function refreshCustomerOrderStatuses() {
         }
     }));
 
-    saveOrders(refreshedOrders);
+    saveOrders(refreshedOrders.filter(Boolean));
     displayMyOrders();
 }
 // ==========================================
