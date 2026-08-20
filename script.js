@@ -465,6 +465,9 @@ function addToCart(productName, color) {
 
         cart.push({
 
+            id:
+                product.id,
+
             name:
                 product.name,
 
