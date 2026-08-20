@@ -852,7 +852,9 @@ function filterProducts(category) {
                 .toLowerCase();
 
 
+        // A product-name search is global; categories only filter a blank search.
         const matchesCategory =
+            searchText.length > 0 ||
             category === "all" ||
             productCard.classList.contains(
                 category
