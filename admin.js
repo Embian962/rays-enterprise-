@@ -66,11 +66,30 @@ let activeOrderFilter = "all-orders";
 const adminLoginForm = document.getElementById("adminLoginForm");
 const adminLoginStatus = document.getElementById("adminLoginStatus");
 const adminLogoutButton = document.getElementById("adminLogoutButton");
+const adminLoginSection = document.getElementById("admin-login");
 
 function updateAdminLoginStatus() {
-    if (!adminLoginStatus) return;
-    adminLoginStatus.textContent = adminToken ? "Signed in" : "Sign in to add, edit, or delete products.";
+    if (adminLoginStatus) adminLoginStatus.textContent = adminToken ? "Signed in" : "Sign in to add, edit, or delete products.";
     if (adminLogoutButton) adminLogoutButton.style.display = adminToken ? "inline-block" : "none";
+    if (adminLoginSection) {
+        if (adminToken) {
+            adminLoginSection.classList.add("hidden");
+            adminLoginSection.setAttribute("aria-hidden", "true");
+        } else {
+            adminLoginSection.classList.remove("hidden");
+            adminLoginSection.setAttribute("aria-hidden", "false");
+        }
+    }
+
+    try {
+        console.debug("updateAdminLoginStatus:", {
+            tokenLength: adminToken ? adminToken.length : 0,
+            adminLoginSectionFound: !!adminLoginSection,
+            adminLogoutButtonFound: !!adminLogoutButton
+        });
+    } catch (e) {
+        /* ignore */
+    }
 }
 
 if (adminLoginForm) {
@@ -81,18 +100,26 @@ if (adminLoginForm) {
                 method: "POST",
                 headers: { "Content-Type": "application/json" },
                 body: JSON.stringify({
-                    username: document.getElementById("adminUsername").value,
-                    password: document.getElementById("adminPassword").value
+                    username: document.getElementById("adminUsername").value.trim(),
+                    password: document.getElementById("adminPassword").value.trim()
                 })
             });
-            const body = await response.json();
-            if (!response.ok) throw new Error(body.error || "Sign-in failed.");
+            const body = await response.json().catch(function() { return {}; });
+            if (!response.ok) {
+                throw new Error(body.error || "The sign-in service returned an unexpected response.");
+            }
+            if (!body.token) throw new Error("The sign-in service did not return a session token.");
             adminToken = body.token;
             sessionStorage.setItem("rays-admin-token", adminToken);
             document.getElementById("adminPassword").value = "";
             updateAdminLoginStatus();
+            loadSharedAdminData();
         } catch (error) {
-            alert(error.message);
+            const message = error instanceof TypeError && error.message === "Failed to fetch"
+                ? "Could not reach the sign-in service. Please try again in a moment."
+                : error.message;
+            if (adminLoginStatus) adminLoginStatus.textContent = message;
+            alert(message);
         }
     });
 }
@@ -112,6 +139,10 @@ if (adminLogoutButton) {
 
 const productForm =
     document.getElementById("productForm");
+
+// The API accepts up to 25 MB of JSON. A base64 data URL is about 33% larger
+// than the source image, so cap the selected image before trying to upload it.
+const MAX_PRODUCT_IMAGE_BYTES = 15 * 1024 * 1024;
 
 productForm.addEventListener("submit", function(event) {
 
@@ -154,6 +185,13 @@ productForm.addEventListener("submit", function(event) {
         return;
     }
 
+    if (imageFile.size > MAX_PRODUCT_IMAGE_BYTES) {
+
+        alert("Please choose a product image smaller than 15 MB.");
+
+        return;
+    }
+
 
     const reader = new FileReader();
 
@@ -182,8 +220,18 @@ productForm.addEventListener("submit", function(event) {
 
             products.unshift(await response.json());
         } catch (error) {
-            alert(error.message);
-            return;
+            // If the API is unreachable or returns an error, fall back to
+            // storing products locally so the admin UI remains usable.
+            console.warn("API product save failed, falling back to localStorage:", error);
+            products.unshift(product);
+            try {
+                localStorage.setItem("products", JSON.stringify(products));
+            } catch (e) {
+                console.error("Could not save product to localStorage.", e);
+                alert(error.message);
+                return;
+            }
+            alert("Product saved locally (API unavailable). It will not be shared to the storefront.");
         }
 
 
@@ -594,7 +642,7 @@ function cancelEdit() {
 // DISPLAY CUSTOMER ORDERS
 // ==========================================
 
-function displayOrders() {
+displayOrders = function() {
 
     activeOrderFilter = "all-orders";
 
@@ -919,7 +967,7 @@ function deleteOrder(index) {
 // DASHBOARD STATISTICS
 // ==========================================
 
-function updateDashboard() {
+updateDashboard = function() {
 
     const orders =
         JSON.parse(
@@ -1409,7 +1457,7 @@ function openAdminPanel(section) {
 // DISPLAY ORDERS BY STATUS
 // ==========================================
 
-function displayOrdersByStatus(filter) {
+displayOrdersByStatus = function(filter) {
 
     activeOrderFilter = filter;
 
@@ -1843,7 +1891,7 @@ function hideOrdersPanel() {
 // CUSTOMER REVIEWS
 // ==========================================
 
-function displayAdminReviews() {
+displayAdminReviews = function() {
 
     const reviewList =
         document.getElementById("admin-review-list");
@@ -1892,7 +1940,7 @@ function displayAdminReviews() {
 }
 
 
-function deleteReview(reviewId) {
+deleteReview = function(reviewId) {
 
     if (!confirm("Delete this customer feedback?")) {
         return;
@@ -1914,3 +1962,186 @@ function deleteReview(reviewId) {
 
 
 displayAdminReviews();
+
+
+// ==========================================
+// SHARED ORDERS AND CUSTOMER FEEDBACK
+// ==========================================
+
+let sharedOrders = [];
+
+function renderSharedOrders(filter = activeOrderFilter) {
+    activeOrderFilter = filter;
+    const ordersList = document.getElementById("orders-list");
+    if (!ordersList) return;
+
+    const visibleOrders = filter === "all-orders"
+        ? sharedOrders
+        : sharedOrders.filter(function(order) { return (order.status || "Pending") === filter; });
+
+    ordersList.innerHTML = "";
+    if (!visibleOrders.length) {
+        ordersList.innerHTML = "<p>No orders in this category yet.</p>";
+        return;
+    }
+
+    visibleOrders.forEach(function(order) {
+        const productsHtml = (order.products || []).map(function(product) {
+            return "<p>" + product.name + " × " + product.quantity + " — KSh " +
+                (Number(product.price) * Number(product.quantity)).toLocaleString() + "</p>";
+        }).join("");
+
+        const card = document.createElement("article");
+        card.className = "admin-order";
+        card.innerHTML =
+            "<h3>" + (order.orderNumber || ("No." + String(order.id).padStart(3, "0"))) + "</h3>" +
+            "<p><strong>Customer:</strong> " + (order.customerName || "N/A") + "</p>" +
+            "<p><strong>Phone:</strong> " + (order.customerPhone || "N/A") + "</p>" +
+            "<p><strong>Location:</strong> " + (order.customerLocation || "N/A") + "</p>" +
+            "<p><strong>Notes:</strong> " + (order.customerNotes || "None") + "</p>" +
+            "<h4>Products</h4>" + productsHtml +
+            "<p><strong>Total:</strong> KSh " + Number(order.total || 0).toLocaleString() + "</p>" +
+            "<p><strong>Date:</strong> " + (order.date || "N/A") + "</p>" +
+            "<label>Update Status</label>" +
+            "<select data-order-id='" + order.id + "'>" +
+                ["Pending", "Processing", "Completed", "Cancelled"].map(function(status) {
+                    return "<option value='" + status + "'" + (order.status === status ? " selected" : "") + ">" + status + "</option>";
+                }).join("") +
+            "</select> <button type='button' data-delete-order='" + order.id + "'>Delete Order</button>";
+
+        const statusSelect = card.querySelector("select");
+        statusSelect.addEventListener("change", function() {
+            updateOrderStatusById(order.id, statusSelect.value);
+        });
+        card.querySelector("[data-delete-order]").addEventListener("click", function() {
+            deleteOrderById(order.id);
+        });
+        ordersList.appendChild(card);
+    });
+}
+
+async function loadSharedOrders() {
+    if (!adminToken) return;
+    try {
+        const response = await adminRequest("/api/orders");
+        if (!response) return;
+        sharedOrders = await response.json();
+        renderSharedOrders(activeOrderFilter);
+        updateDashboard();
+    } catch (error) {
+        console.warn("Could not load shared orders.", error);
+    }
+}
+
+updateOrderStatusById = async function(orderId, newStatus) {
+    try {
+        const response = await adminRequest("/api/orders/" + orderId, {
+            method: "PATCH",
+            body: JSON.stringify({ status: newStatus })
+        });
+        if (!response) return;
+        const updatedOrder = await response.json();
+        sharedOrders = sharedOrders.map(function(order) {
+            return Number(order.id) === Number(orderId) ? updatedOrder : order;
+        });
+        renderSharedOrders(activeOrderFilter);
+        updateDashboard();
+    } catch (error) {
+        alert(error.message || "Could not update this order.");
+    }
+}
+
+deleteOrderById = async function(orderId) {
+    if (!confirm("Delete " + (sharedOrders.find(function(order) { return Number(order.id) === Number(orderId); })?.orderNumber || ("No." + String(orderId).padStart(3, "0"))) + "?")) return;
+    try {
+        const response = await adminRequest("/api/orders/" + orderId, { method: "DELETE" });
+        if (!response) return;
+        sharedOrders = sharedOrders.filter(function(order) { return Number(order.id) !== Number(orderId); });
+        renderSharedOrders(activeOrderFilter);
+        updateDashboard();
+    } catch (error) {
+        alert(error.message || "Could not delete this order.");
+    }
+}
+
+displayOrders = function() {
+    activeOrderFilter = "all-orders";
+    renderSharedOrders(activeOrderFilter);
+}
+
+displayOrdersByStatus = function(filter) {
+    renderSharedOrders(filter);
+}
+
+displayAdminReviews = function() {
+    const reviewList = document.getElementById("admin-review-list");
+    if (!reviewList) return;
+
+    fetch(getApiUrl() + "/api/reviews")
+        .then(function(response) {
+            if (!response.ok) throw new Error("Could not load customer feedback.");
+            return response.json();
+        })
+        .then(function(reviews) {
+            reviewList.innerHTML = "";
+            if (!reviews.length) {
+                reviewList.innerHTML = "<p>No customer feedback yet.</p>";
+                return;
+            }
+            reviews.forEach(function(review) {
+                const card = document.createElement("article");
+                card.className = "admin-review";
+                card.innerHTML =
+                    "<h3>" + review.name + "</h3>" +
+                    "<p class='review-stars'>" + "★".repeat(Number(review.rating) || 0) + "☆".repeat(5 - (Number(review.rating) || 0)) + "</p>" +
+                    "<p><strong>Product:</strong> " + (review.product || "General feedback") + "</p>" +
+                    "<p>" + review.comment + "</p><p><small>" + (review.date || "") + "</small></p>" +
+                    "<button type='button'>Delete Feedback</button>";
+                card.querySelector("button").addEventListener("click", function() { deleteReview(review.id); });
+                reviewList.appendChild(card);
+            });
+        })
+        .catch(function(error) { console.warn("Could not load shared feedback.", error); });
+}
+
+deleteReview = async function(reviewId) {
+    if (!confirm("Delete this customer feedback?")) return;
+    try {
+        const response = await adminRequest("/api/reviews/" + reviewId, { method: "DELETE" });
+        if (response) displayAdminReviews();
+    } catch (error) {
+        alert(error.message || "Could not delete this feedback.");
+    }
+}
+
+updateDashboard = function() {
+    const counts = { Pending: 0, Processing: 0, Completed: 0 };
+    let totalSales = 0;
+    sharedOrders.forEach(function(order) {
+        const status = order.status || "Pending";
+        if (Object.prototype.hasOwnProperty.call(counts, status)) counts[status]++;
+        if (status === "Completed") totalSales += Number(order.total) || 0;
+    });
+    const values = {
+        "total-products": products.length,
+        "total-orders": sharedOrders.length,
+        "pending-orders": counts.Pending,
+        "processing-orders": counts.Processing,
+        "completed-orders": counts.Completed,
+        "total-sales": totalSales.toLocaleString()
+    };
+    Object.keys(values).forEach(function(id) {
+        const element = document.getElementById(id);
+        if (element) element.textContent = values[id];
+    });
+}
+
+function loadSharedAdminData() {
+    loadSharedOrders();
+    displayAdminReviews();
+}
+
+if (adminToken) loadSharedAdminData();
+setInterval(function() {
+    if (adminToken) loadSharedAdminData();
+}, 30000);

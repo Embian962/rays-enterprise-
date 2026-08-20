@@ -17,6 +17,75 @@ const pool = new Pool({
   ssl: process.env.NODE_ENV === "production" ? { rejectUnauthorized: false } : false
 });
 
+// Older Supabase setups may already have a `products` table but not the
+// columns added for the shared catalog. Keep this migration idempotent so a
+// Render deploy repairs that incomplete table without requiring dashboard
+// access. Existing columns and product data are left untouched.
+const ensureProductSchema = async () => {
+  await pool.query(`
+    CREATE TABLE IF NOT EXISTS products (
+      id BIGSERIAL PRIMARY KEY,
+      name TEXT NOT NULL,
+      price NUMERIC(12, 2) NOT NULL CHECK (price >= 0),
+      stock INTEGER NOT NULL DEFAULT 0 CHECK (stock >= 0),
+      category TEXT NOT NULL,
+      colors JSONB NOT NULL DEFAULT '[]'::jsonb,
+      image TEXT,
+      featured BOOLEAN NOT NULL DEFAULT FALSE,
+      sale_price NUMERIC(12, 2),
+      created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+      updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+    )
+  `);
+  await pool.query(`
+    ALTER TABLE products
+      ADD COLUMN IF NOT EXISTS stock INTEGER NOT NULL DEFAULT 0 CHECK (stock >= 0),
+      ADD COLUMN IF NOT EXISTS colors JSONB NOT NULL DEFAULT '[]'::jsonb,
+      ADD COLUMN IF NOT EXISTS image TEXT,
+      ADD COLUMN IF NOT EXISTS featured BOOLEAN NOT NULL DEFAULT FALSE,
+      ADD COLUMN IF NOT EXISTS sale_price NUMERIC(12, 2),
+      ADD COLUMN IF NOT EXISTS created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+      ADD COLUMN IF NOT EXISTS updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+  `);
+};
+
+const ensureSharedDataSchema = async () => {
+  await pool.query(`
+    CREATE TABLE IF NOT EXISTS orders (
+      id BIGSERIAL PRIMARY KEY,
+      customer_name TEXT NOT NULL,
+      customer_phone TEXT NOT NULL,
+      customer_location TEXT NOT NULL,
+      customer_notes TEXT,
+      products JSONB NOT NULL,
+      total NUMERIC(12, 2) NOT NULL CHECK (total >= 0),
+      payment_method TEXT NOT NULL,
+      payment_status TEXT NOT NULL DEFAULT 'Pending',
+      status TEXT NOT NULL DEFAULT 'Pending',
+      created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+    )
+  `);
+  await pool.query(`
+    CREATE TABLE IF NOT EXISTS reviews (
+      id BIGSERIAL PRIMARY KEY,
+      customer_name TEXT NOT NULL,
+      product_name TEXT,
+      rating SMALLINT NOT NULL CHECK (rating BETWEEN 1 AND 5),
+      comment TEXT NOT NULL,
+      created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+    )
+  `);
+  await pool.query(`
+    CREATE TABLE IF NOT EXISTS contact_messages (
+      id BIGSERIAL PRIMARY KEY,
+      customer_name TEXT NOT NULL,
+      message TEXT NOT NULL,
+      created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+    )
+  `);
+  await pool.query("CREATE INDEX IF NOT EXISTS orders_created_at_index ON orders (created_at DESC)");
+  await pool.query("CREATE INDEX IF NOT EXISTS reviews_created_at_index ON reviews (created_at DESC)");
+};
 const allowedOrigins = new Set([
   ...(process.env.FRONTEND_ORIGIN || "").split(",").map(origin => origin.trim()).filter(Boolean),
   "http://localhost:5500",
@@ -37,10 +106,39 @@ app.use(cors({
   allowedHeaders: ["Content-Type", "Authorization", "X-Admin-Key", "X-Admin-Token"],
   exposedHeaders: ["Authorization"]
 }));
-app.use(express.json({ limit: "8mb" }));
+// Product photos are sent from the admin page as base64 data URLs. Base64 adds
+// roughly one third to the original file size, so the old 8 MB JSON limit
+// rejected ordinary phone photos before the product route or database query
+// could run.
+app.use(express.json({ limit: "25mb" }));
 
 const asyncRoute = handler => (req, res, next) => Promise.resolve(handler(req, res, next)).catch(next);
 
+const serializeOrder = order => ({
+  id: order.id,
+  orderNumber: "No." + String(order.id).padStart(3, "0"),
+  customerName: order.customer_name,
+  customerPhone: order.customer_phone,
+  customerLocation: order.customer_location,
+  customerNotes: order.customer_notes || "",
+  products: order.products,
+  total: Number(order.total),
+  paymentMethod: order.payment_method,
+  paymentStatus: order.payment_status,
+  status: order.status,
+  date: new Date(order.created_at).toLocaleString(),
+  createdAt: order.created_at
+});
+
+const serializeReview = review => ({
+  id: review.id,
+  name: review.customer_name,
+  product: review.product_name || "",
+  rating: Number(review.rating),
+  comment: review.comment,
+  date: new Date(review.created_at).toLocaleString(),
+  createdAt: review.created_at
+});
 const encodeTokenPart = value => Buffer.from(JSON.stringify(value)).toString("base64url");
 const signToken = value => crypto.createHmac("sha256", process.env.ADMIN_SESSION_SECRET || "").update(value).digest("base64url");
 const safeEqual = (left, right) => {
@@ -174,7 +272,7 @@ app.delete("/api/products/:id", isAdmin, asyncRoute(async (req, res) => {
 
 app.get("/api/orders", isAdmin, asyncRoute(async (_req, res) => {
   const { rows } = await pool.query("SELECT * FROM orders ORDER BY created_at DESC");
-  res.json(rows);
+  res.json(rows.map(serializeOrder));
 }));
 
 app.post("/api/orders", asyncRoute(async (req, res) => {
@@ -192,7 +290,7 @@ app.post("/api/orders", asyncRoute(async (req, res) => {
       [customerName, customerPhone, customerLocation, customerNotes, JSON.stringify(products), total, paymentMethod, paymentStatus]
     );
     await client.query("COMMIT");
-    res.status(201).json(rows[0]);
+    res.status(201).json(serializeOrder(rows[0]));
   } catch (error) {
     await client.query("ROLLBACK");
     res.status(409).json({ error: error.message });
@@ -208,20 +306,30 @@ app.patch("/api/orders/:id", isAdmin, asyncRoute(async (req, res) => {
     [status, paymentStatus, req.params.id]
   );
   if (!rows[0]) return res.status(404).json({ error: "Order not found." });
-  res.json(rows[0]);
+  res.json(serializeOrder(rows[0]));
 }));
 
+app.delete("/api/orders/:id", isAdmin, asyncRoute(async (req, res) => {
+  const result = await pool.query("DELETE FROM orders WHERE id=$1", [req.params.id]);
+  if (!result.rowCount) return res.status(404).json({ error: "Order not found." });
+  res.status(204).end();
+}));
 app.get("/api/reviews", asyncRoute(async (_req, res) => {
   const { rows } = await pool.query("SELECT * FROM reviews ORDER BY created_at DESC");
-  res.json(rows);
+  res.json(rows.map(serializeReview));
 }));
 
 app.post("/api/reviews", asyncRoute(async (req, res) => {
   const { customerName, productName = null, rating, comment } = req.body;
   const { rows } = await pool.query("INSERT INTO reviews (customer_name, product_name, rating, comment) VALUES ($1,$2,$3,$4) RETURNING *", [customerName, productName, rating, comment]);
-  res.status(201).json(rows[0]);
+  res.status(201).json(serializeReview(rows[0]));
 }));
 
+app.delete("/api/reviews/:id", isAdmin, asyncRoute(async (req, res) => {
+  const result = await pool.query("DELETE FROM reviews WHERE id=$1", [req.params.id]);
+  if (!result.rowCount) return res.status(404).json({ error: "Feedback not found." });
+  res.status(204).end();
+}));
 app.get("/api/contact-messages", isAdmin, asyncRoute(async (_req, res) => {
   const { rows } = await pool.query("SELECT * FROM contact_messages ORDER BY created_at DESC");
   res.json(rows);
@@ -235,7 +343,14 @@ app.post("/api/contact-messages", asyncRoute(async (req, res) => {
 
 app.use((error, _req, res, _next) => {
   console.error(error);
+  if (error?.type === "entity.too.large" || error?.status === 413) {
+    return res.status(413).json({
+      error: "The product image is too large. Choose an image smaller than 15 MB."
+    });
+  }
   res.status(500).json({ error: "The server could not complete that request." });
 });
 
+await ensureProductSchema();
+await ensureSharedDataSchema();
 app.listen(port, () => console.log(`Ray's Enterprise API listening on port ${port}`));

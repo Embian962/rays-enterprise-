@@ -1345,7 +1345,7 @@ function showOrderConfirmation(order) {
     if (orderNumber) {
 
         orderNumber.textContent =
-            "#" + order.id;
+            order.orderNumber || ("No." + String(order.id).padStart(3, "0"));
 
     }
 
@@ -1676,7 +1676,7 @@ function displayMyOrders() {
                         </span>
 
                         <strong>
-                            #${order.id}
+                            ${order.orderNumber || ("No." + String(order.id).padStart(3, "0"))}
                         </strong>
 
                     </div>
@@ -1789,7 +1789,7 @@ if (checkoutForm) {
 
     checkoutForm.addEventListener(
         "submit",
-        function(event) {
+        async function(event) {
 
             event.preventDefault();
 
@@ -1981,7 +1981,7 @@ if (checkoutForm) {
 
             // CREATE ORDER
 
-            const order = {
+            let order = {
 
                 id:
                     Date.now(),
@@ -2003,6 +2003,8 @@ if (checkoutForm) {
                         function(product) {
 
                             return {
+
+                                id: product.id,
 
                                 name:
                                     product.name,
@@ -2037,9 +2039,23 @@ if (checkoutForm) {
 
             };
 
+            // Save to the shared server first. This makes the order visible
+            // to administrators on every signed-in phone and PC.
+            try {
+                const response = await fetch((window.RAYS_API_URL || "").replace(/\/$/, "") + "/api/orders", {
+                    method: "POST",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify(order)
+                });
+                const body = await response.json().catch(function() { return {}; });
+                if (!response.ok) throw new Error(body.error || "Could not save your order.");
+                order = body;
+            } catch (error) {
+                alert(error.message || "Your order could not be sent. Please try again.");
+                return;
+            }
 
-            // SAVE ORDER
-
+            // Keep a local copy only for the customer's order-history view.
             const orders =
                 getOrders();
 
@@ -2190,35 +2206,27 @@ const reviewForm =
 
 if (reviewForm) {
 
-    reviewForm.addEventListener("submit", function(event) {
-
+    reviewForm.addEventListener("submit", async function(event) {
         event.preventDefault();
-
-
-        const reviews =
-            JSON.parse(localStorage.getItem("reviews")) || [];
-
-
-        reviews.unshift({
-            id: Date.now(),
-            name: document.getElementById("reviewName").value.trim(),
-            product: document.getElementById("reviewProduct").value,
+        const feedback = {
+            customerName: document.getElementById("reviewName").value.trim(),
+            productName: document.getElementById("reviewProduct").value,
             rating: Number(document.getElementById("reviewRating").value),
-            comment: document.getElementById("reviewComment").value.trim(),
-            date: new Date().toLocaleString()
-        });
-
-
-        localStorage.setItem(
-            "reviews",
-            JSON.stringify(reviews)
-        );
-
-
-        reviewForm.reset();
-
-        alert("Thank you for your feedback!");
-
+            comment: document.getElementById("reviewComment").value.trim()
+        };
+        try {
+            const response = await fetch((window.RAYS_API_URL || "").replace(/\/$/, "") + "/api/reviews", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify(feedback)
+            });
+            const body = await response.json().catch(function() { return {}; });
+            if (!response.ok) throw new Error(body.error || "Could not send feedback.");
+            reviewForm.reset();
+            alert("Thank you for your feedback!");
+        } catch (error) {
+            alert(error.message || "Your feedback could not be sent. Please try again.");
+        }
     });
 
 }
