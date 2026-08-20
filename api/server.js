@@ -114,6 +114,11 @@ app.use(express.json({ limit: "25mb" }));
 
 const asyncRoute = handler => (req, res, next) => Promise.resolve(handler(req, res, next)).catch(next);
 
+const formatBusinessDate = value => new Intl.DateTimeFormat("en-KE", {
+  timeZone: "Africa/Nairobi",
+  dateStyle: "medium",
+  timeStyle: "short"
+}).format(new Date(value));
 const serializeOrder = order => ({
   id: order.id,
   orderNumber: "No." + String(order.id).padStart(3, "0"),
@@ -126,7 +131,7 @@ const serializeOrder = order => ({
   paymentMethod: order.payment_method,
   paymentStatus: order.payment_status,
   status: order.status,
-  date: new Date(order.created_at).toLocaleString(),
+  date: formatBusinessDate(order.created_at),
   createdAt: order.created_at
 });
 
@@ -136,7 +141,7 @@ const serializeReview = review => ({
   product: review.product_name || "",
   rating: Number(review.rating),
   comment: review.comment,
-  date: new Date(review.created_at).toLocaleString(),
+  date: formatBusinessDate(review.created_at),
   createdAt: review.created_at
 });
 const encodeTokenPart = value => Buffer.from(JSON.stringify(value)).toString("base64url");
