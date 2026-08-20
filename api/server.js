@@ -270,6 +270,20 @@ app.delete("/api/products/:id", isAdmin, asyncRoute(async (req, res) => {
   res.status(204).end();
 }));
 
+// Customers can refresh only an order that matches the phone number used when
+// it was placed. This keeps order status available without exposing all orders.
+app.post("/api/orders/track", asyncRoute(async (req, res) => {
+  const { orderId, customerPhone } = req.body || {};
+  if (!orderId || !customerPhone) {
+    return res.status(400).json({ error: "Order number and phone number are required." });
+  }
+  const { rows } = await pool.query(
+    "SELECT * FROM orders WHERE id=$1 AND customer_phone=$2",
+    [orderId, String(customerPhone).trim()]
+  );
+  if (!rows[0]) return res.status(404).json({ error: "Order not found." });
+  res.json(serializeOrder(rows[0]));
+}));
 app.get("/api/orders", isAdmin, asyncRoute(async (_req, res) => {
   const { rows } = await pool.query("SELECT * FROM orders ORDER BY created_at DESC");
   res.json(rows.map(serializeOrder));

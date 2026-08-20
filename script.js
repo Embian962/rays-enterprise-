@@ -1535,6 +1535,32 @@ function showMyOrders(event) {
 }
 
 
+// Refresh status for orders saved in this browser. The API validates the phone
+// number, so one customer cannot retrieve another customer's order details.
+async function refreshCustomerOrderStatuses() {
+    const savedOrders = getOrders();
+    if (!savedOrders.length) return;
+
+    const apiUrl = (window.RAYS_API_URL || "").replace(/\/$/, "");
+    const refreshedOrders = await Promise.all(savedOrders.map(async function(order) {
+        if (!order.id || !order.customerPhone) return order;
+        try {
+            const response = await fetch(apiUrl + "/api/orders/track", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ orderId: order.id, customerPhone: order.customerPhone })
+            });
+            if (!response.ok) return order;
+            return await response.json();
+        } catch (error) {
+            console.warn("Could not refresh this order status.", error);
+            return order;
+        }
+    }));
+
+    saveOrders(refreshedOrders);
+    displayMyOrders();
+}
 // ==========================================
 // DISPLAY MY ORDERS
 // ==========================================
