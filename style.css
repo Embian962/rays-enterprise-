@@ -2170,3 +2170,9 @@ body.dark-mode .no-search-results h3 { color: #f0f8f7; }
 .search-submit { border: 0; border-radius: 10px; padding: 0 16px; color: #fff; background: var(--brand); font-weight: 800; cursor: pointer; }
 .search-submit:hover { background: var(--brand-deep); }
 body.dark-mode .search-submit { color: #102526; background: #8ed2c5; }
+.product-image-container img { cursor: zoom-in; }
+.product-lightbox { position: fixed; inset: 0; z-index: 100; display: none; place-items: center; padding: 24px; background: rgba(3, 15, 16, .88); }
+.product-lightbox.is-open { display: grid; }
+.product-lightbox img { max-width: min(920px, 94vw); max-height: 82vh; width: auto; height: auto; object-fit: contain; border-radius: 12px; box-shadow: 0 20px 60px rgba(0,0,0,.4); }
+.product-lightbox p { position: absolute; bottom: 22px; max-width: 80vw; color: #fff; font-weight: 800; text-align: center; }
+.lightbox-close { position: absolute; top: 18px; right: 20px; border: 0; color: #fff; background: transparent; font-size: 2.3rem; line-height: 1; cursor: pointer; }

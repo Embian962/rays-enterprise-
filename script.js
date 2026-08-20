@@ -959,6 +959,30 @@ if (searchInput) {
 // LOAD PRODUCTS
 // ==========================================
 
+function openProductImage(imageUrl, productName) {
+    let lightbox = document.getElementById("product-lightbox");
+    if (!lightbox) {
+        lightbox = document.createElement("div");
+        lightbox.id = "product-lightbox";
+        lightbox.className = "product-lightbox";
+        lightbox.innerHTML = "<button type=\"button\" class=\"lightbox-close\" aria-label=\"Close image preview\">&times;</button><img alt=\"\"><p></p>";
+        document.body.appendChild(lightbox);
+        lightbox.addEventListener("click", function(event) {
+            if (event.target === lightbox || event.target.classList.contains("lightbox-close")) lightbox.classList.remove("is-open");
+        });
+    }
+    const image = lightbox.querySelector("img");
+    image.src = imageUrl;
+    image.alt = productName;
+    lightbox.querySelector("p").textContent = productName;
+    lightbox.classList.add("is-open");
+    lightbox.querySelector(".lightbox-close").focus();
+}
+
+document.addEventListener("keydown", function(event) {
+    const lightbox = document.getElementById("product-lightbox");
+    if (event.key === "Escape" && lightbox) lightbox.classList.remove("is-open");
+});
 async function loadProducts() {
 
     const catalogContainer = document.getElementById("product-container");
