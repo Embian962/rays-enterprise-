@@ -2079,3 +2079,15 @@ footer a:hover { color: var(--accent); }
 .product-card .add-to-cart-button,
 .save-to-list-button { padding: 9px 12px; }
 .save-to-list-button { margin-top: 6px; }
+/* Edge-to-edge featured catalog on mobile */
+@media (max-width: 700px) {
+    .products-section {
+        width: calc(100% + 32px);
+        margin-left: -16px;
+        margin-right: -16px;
+        border-right: 0;
+        border-left: 0;
+        border-radius: 0;
+        box-shadow: none;
+    }
+}
