@@ -2272,3 +2272,37 @@ if (closeFeedbackInboxButton && feedbackInbox) {
         feedbackInboxButton?.focus();
     });
 }
+
+
+let salesBalanceVisible = false;
+const toggleSalesBalanceButton = document.getElementById("toggleSalesBalanceButton");
+
+function syncSalesBalanceVisibility() {
+    const sales = document.getElementById("total-sales");
+    if (!sales) return;
+    if (!salesBalanceVisible) {
+        if (sales.textContent.trim() !== "??????") sales.dataset.balance = sales.textContent.trim();
+        sales.textContent = "??????";
+    } else {
+        sales.textContent = sales.dataset.balance || "0";
+    }
+    if (toggleSalesBalanceButton) {
+        toggleSalesBalanceButton.textContent = salesBalanceVisible ? "Hide balance" : "Show balance";
+        toggleSalesBalanceButton.setAttribute("aria-pressed", String(salesBalanceVisible));
+    }
+}
+
+if (toggleSalesBalanceButton) {
+    toggleSalesBalanceButton.addEventListener("click", function(event) {
+        event.stopPropagation();
+        salesBalanceVisible = !salesBalanceVisible;
+        syncSalesBalanceVisibility();
+    });
+}
+
+const updateDashboardWithBalanceMask = updateDashboard;
+updateDashboard = function() {
+    updateDashboardWithBalanceMask();
+    syncSalesBalanceVisibility();
+};
+syncSalesBalanceVisibility();

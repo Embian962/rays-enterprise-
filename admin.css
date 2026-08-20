@@ -751,3 +751,6 @@ body:not(.admin-authenticated) main {
 .feedback-inbox-heading h2 { margin: 0; }
 .close-feedback-inbox-button { border: 1px solid #94a3b8; border-radius: 8px; padding: 8px 12px; color: #334155; background: #fff; font-weight: 750; cursor: pointer; }
 .close-feedback-inbox-button:hover { background: #f1f5f9; }
+
+.toggle-sales-balance-button { margin-top: 8px; border: 1px solid #b8cfcc; border-radius: 8px; padding: 7px 10px; color: #0f766e; background: #fff; font-size: .82rem; font-weight: 800; cursor: pointer; }
+.toggle-sales-balance-button:hover { background: #edf7f5; border-color: #0f766e; }
