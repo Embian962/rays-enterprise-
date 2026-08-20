@@ -1527,6 +1527,8 @@ function showMyOrders(event) {
 
     displayMyOrders();
 
+    refreshCustomerOrderStatuses();
+
 
     myOrders.scrollIntoView({
         behavior: "smooth"
