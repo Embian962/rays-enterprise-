@@ -2215,3 +2215,50 @@ if (adminToken) loadSharedAdminData();
 setInterval(function() {
     if (adminToken) loadSharedAdminData();
 }, 30000);
+
+
+// Feedback inbox: unread review IDs are remembered on this admin device.
+const feedbackInboxButton = document.getElementById("feedbackInboxButton");
+const feedbackInbox = document.getElementById("feedback-inbox");
+const feedbackUnreadCount = document.getElementById("feedbackUnreadCount");
+const feedbackReadKey = "rays-read-feedback-ids";
+
+function getReadFeedbackIds() {
+    return new Set(JSON.parse(localStorage.getItem(feedbackReadKey) || "[]").map(String));
+}
+
+function updateFeedbackUnreadCount(reviews) {
+    const readIds = getReadFeedbackIds();
+    const unread = reviews.filter(function(review) { return !readIds.has(String(review.id)); }).length;
+    if (feedbackUnreadCount) {
+        feedbackUnreadCount.hidden = unread === 0;
+        feedbackUnreadCount.textContent = unread;
+    }
+}
+
+function refreshFeedbackUnreadCount() {
+    fetch(getApiUrl() + "/api/reviews")
+        .then(function(response) { if (!response.ok) throw new Error("Could not load feedback."); return response.json(); })
+        .then(updateFeedbackUnreadCount)
+        .catch(function(error) { console.warn("Could not update feedback badge.", error); });
+}
+
+if (feedbackInboxButton && feedbackInbox) {
+    feedbackInboxButton.addEventListener("click", function() {
+        feedbackInbox.hidden = false;
+        fetch(getApiUrl() + "/api/reviews")
+            .then(function(response) { return response.ok ? response.json() : []; })
+            .then(function(reviews) {
+                localStorage.setItem(feedbackReadKey, JSON.stringify(reviews.map(function(review) { return String(review.id); })));
+                updateFeedbackUnreadCount(reviews);
+            });
+        displayAdminReviews();
+        feedbackInbox.scrollIntoView({ behavior: "smooth", block: "start" });
+    });
+}
+
+const displayAdminReviewsWithInboxBadge = displayAdminReviews;
+displayAdminReviews = function() {
+    displayAdminReviewsWithInboxBadge();
+    refreshFeedbackUnreadCount();
+};

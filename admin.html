@@ -37,6 +37,9 @@
         <p>
             Admin Dashboard
         </p>
+        <button type="button" id="feedbackInboxButton" class="feedback-inbox-button" aria-controls="feedback-inbox">
+            Feedback <span id="feedbackUnreadCount" class="feedback-unread-count" hidden>0</span>
+        </button>
 
 </header>
 
@@ -539,7 +542,7 @@
              CUSTOMER FEEDBACK
         ========================== -->
 
-        <section class="admin-reviews">
+        <section class="admin-reviews" id="feedback-inbox" hidden>
 
             <h2>Customer Feedback</h2>
 
