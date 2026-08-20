@@ -361,7 +361,7 @@ function displayMyList() {
         const item = document.createElement("article");
         item.className = "my-list-item";
         item.innerHTML = `
-            <img src="${product.image}" alt="${product.name}">
+            <img src="${product.image || "rays-enterprise-catalog-logo.jpg"}" alt="${product.name}">
             <div>
                 <h3>${product.name}</h3>
                 <p>KSh ${Number(product.price || 0).toLocaleString()}</p>
@@ -907,6 +907,12 @@ if (searchInput) {
 
 async function loadProducts() {
 
+    const catalogContainer = document.getElementById("product-container");
+    if (catalogContainer) {
+        catalogContainer.className = "products product-loading";
+        catalogContainer.innerHTML = "<div class=\"product-skeleton\"></div>".repeat(4);
+    }
+
     const apiUrl = (window.RAYS_API_URL || "").replace(/\/$/, "");
 
     if (apiUrl) {
@@ -937,6 +943,8 @@ async function loadProducts() {
     const products =
         getProducts();
 
+
+    productContainer.className = "products";
 
     productContainer.innerHTML = "";
 
@@ -997,7 +1005,7 @@ async function loadProducts() {
             <div class="product-image-container">
 
                 <img
-                    src="${product.image}"
+                    src="${product.image || "rays-enterprise-catalog-logo.jpg"}"
                     alt="${product.name}"
                 >
 
