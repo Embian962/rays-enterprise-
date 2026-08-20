@@ -1992,22 +1992,35 @@ function renderSharedOrders(filter = activeOrderFilter) {
         }).join("");
 
         const card = document.createElement("article");
-        card.className = "admin-order";
+        card.className = "admin-order status-" + String(order.status || "Pending").toLowerCase();
+        const orderNumber = order.orderNumber || ("No." + String(order.id).padStart(3, "0"));
+        const orderStatus = order.status || "Pending";
         card.innerHTML =
-            "<h3>" + (order.orderNumber || ("No." + String(order.id).padStart(3, "0"))) + "</h3>" +
-            "<p><strong>Customer:</strong> " + (order.customerName || "N/A") + "</p>" +
-            "<p><strong>Phone:</strong> " + (order.customerPhone || "N/A") + "</p>" +
-            "<p><strong>Location:</strong> " + (order.customerLocation || "N/A") + "</p>" +
-            "<p><strong>Notes:</strong> " + (order.customerNotes || "None") + "</p>" +
-            "<h4>Products</h4>" + productsHtml +
-            "<p><strong>Total:</strong> KSh " + Number(order.total || 0).toLocaleString() + "</p>" +
-            "<p><strong>Date:</strong> " + (order.date || "N/A") + "</p>" +
-            "<label>Update Status</label>" +
-            "<select data-order-id='" + order.id + "'>" +
+            "<div class='admin-order-header'>" +
+                "<div><span class='admin-order-label'>Order</span><h3>" + orderNumber + "</h3></div>" +
+                "<span class='admin-order-status'>" + orderStatus + "</span>" +
+            "</div>" +
+            "<div class='admin-order-meta'><span>Placed " + (order.date || "N/A") + "</span></div>" +
+            "<div class='admin-order-grid'>" +
+                "<section class='admin-order-panel'><h4>Customer</h4>" +
+                    "<p><strong>" + (order.customerName || "N/A") + "</strong></p>" +
+                    "<p>" + (order.customerPhone || "No phone") + "</p>" +
+                "</section>" +
+                "<section class='admin-order-panel'><h4>Delivery</h4>" +
+                    "<p>" + (order.customerLocation || "N/A") + "</p>" +
+                    "<p class='admin-order-notes'><strong>Note:</strong> " + (order.customerNotes || "None") + "</p>" +
+                "</section>" +
+            "</div>" +
+            "<section class='admin-order-items'><h4>Items ordered</h4>" + productsHtml + "</section>" +
+            "<div class='admin-order-footer'>" +
+                "<div><span class='admin-order-label'>Order total</span><strong>KSh " + Number(order.total || 0).toLocaleString() + "</strong></div>" +
+                "<div><span class='admin-order-label'>Payment</span><strong>" + (order.paymentMethod || "N/A") + "</strong></div>" +
+            "</div>" +
+            "<div class='admin-order-actions'><label>Update status <select data-order-id='" + order.id + "'>" +
                 ["Pending", "Processing", "Completed", "Cancelled"].map(function(status) {
-                    return "<option value='" + status + "'" + (order.status === status ? " selected" : "") + ">" + status + "</option>";
+                    return "<option value='" + status + "'" + (orderStatus === status ? " selected" : "") + ">" + status + "</option>";
                 }).join("") +
-            "</select> <button type='button' data-delete-order='" + order.id + "'>Delete Order</button>";
+            "</select></label><button type='button' data-delete-order='" + order.id + "'>Delete order</button></div>";
 
         const statusSelect = card.querySelector("select");
         statusSelect.addEventListener("change", function() {
