@@ -1728,3 +1728,86 @@ footer p {
     .order-status { align-self: flex-start; }
 }
 
+
+/* Collapsed feedback tab */
+.reviews-section {
+    padding: 28px 20px;
+}
+
+.reviews-content {
+    display: block;
+    width: min(760px, 100%);
+}
+
+.review-tab {
+    overflow: hidden;
+    border: 1px solid #e2e8f0;
+    border-radius: 14px;
+    background: #fff;
+    box-shadow: 0 5px 16px rgba(15, 23, 42, 0.07);
+}
+
+.review-tab summary {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 16px;
+    padding: 16px 20px;
+    color: #172554;
+    cursor: pointer;
+    list-style: none;
+    font-weight: 800;
+}
+
+.review-tab summary::-webkit-details-marker {
+    display: none;
+}
+
+.review-tab summary::after {
+    content: "+";
+    color: #fff;
+    background: #172554;
+    border-radius: 50%;
+    width: 26px;
+    height: 26px;
+    display: grid;
+    place-items: center;
+    flex: 0 0 auto;
+    font-size: 1.25rem;
+    font-weight: 400;
+}
+
+.review-tab[open] summary {
+    border-bottom: 1px solid #e2e8f0;
+}
+
+.review-tab[open] summary::after {
+    content: "-";
+}
+
+.review-tab summary small {
+    margin-left: auto;
+    color: #64748b;
+    font-weight: 400;
+}
+
+.review-tab .review-form {
+    padding: 20px;
+}
+
+@media (max-width: 560px) {
+    .review-tab summary {
+        align-items: flex-start;
+        flex-direction: column;
+    }
+
+    .review-tab summary small {
+        margin-left: 0;
+    }
+
+    .review-tab summary::after {
+        position: absolute;
+        right: 20px;
+    }
+}
+

@@ -689,34 +689,36 @@
 <section id="reviews" class="reviews-section">
 
     <div class="reviews-content">
-        <div>
-            <h2>Share Your Experience</h2>
-            <p>Your feedback helps Ray's Enterprise serve customers better.</p>
-        </div>
+        <details class="review-tab">
+            <summary>
+                <span>Share Your Experience</span>
+                <small>Your feedback helps Ray's Enterprise serve you better.</small>
+            </summary>
 
-        <form id="reviewForm" class="review-form">
-            <label for="reviewName">Your Name</label>
-            <input id="reviewName" type="text" required>
+            <form id="reviewForm" class="review-form">
+                <label for="reviewName">Your Name</label>
+                <input id="reviewName" type="text" required>
 
-            <label for="reviewProduct">Product (optional)</label>
-            <select id="reviewProduct">
-                <option value="">General feedback</option>
-            </select>
+                <label for="reviewProduct">Product (optional)</label>
+                <select id="reviewProduct">
+                    <option value="">General feedback</option>
+                </select>
 
-            <label for="reviewRating">Rating</label>
-            <select id="reviewRating" required>
-                <option value="5">★★★★★ — Excellent</option>
-                <option value="4">★★★★☆ — Very good</option>
-                <option value="3">★★★☆☆ — Good</option>
-                <option value="2">★★☆☆☆ — Fair</option>
-                <option value="1">★☆☆☆☆ — Poor</option>
-            </select>
+                <label for="reviewRating">Rating</label>
+                <select id="reviewRating" required>
+                    <option value="5">★★★★★ — Excellent</option>
+                    <option value="4">★★★★☆ — Very good</option>
+                    <option value="3">★★★☆☆ — Good</option>
+                    <option value="2">★★☆☆☆ — Fair</option>
+                    <option value="1">★☆☆☆☆ — Poor</option>
+                </select>
 
-            <label for="reviewComment">Comment</label>
-            <textarea id="reviewComment" required placeholder="Tell us about your experience..."></textarea>
+                <label for="reviewComment">Comment</label>
+                <textarea id="reviewComment" required placeholder="Tell us about your experience..."></textarea>
 
-            <button type="submit">Send Feedback</button>
-        </form>
+                <button type="submit">Send Feedback</button>
+            </form>
+        </details>
     </div>
 
 </section>
