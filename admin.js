@@ -2281,8 +2281,8 @@ function syncSalesBalanceVisibility() {
     const sales = document.getElementById("total-sales");
     if (!sales) return;
     if (!salesBalanceVisible) {
-        if (sales.textContent.trim() !== "??????") sales.dataset.balance = sales.textContent.trim();
-        sales.textContent = "??????";
+        if (sales.textContent.trim() !== "*******") sales.dataset.balance = sales.textContent.trim();
+        sales.textContent = "*******";
     } else {
         sales.textContent = sales.dataset.balance || "0";
     }
