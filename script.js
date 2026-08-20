@@ -1629,6 +1629,8 @@ function displayMyOrders() {
             orderCard.className =
                 "order-card";
 
+            orderCard.classList.add("status-" + String(order.status || "Pending").toLowerCase());
+
 
             let productsHTML =
                 "";
