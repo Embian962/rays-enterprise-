@@ -908,6 +908,26 @@ function filterProducts(category) {
 }
 
 
+function updateSearchEmptyState() {
+    const query = searchInput ? searchInput.value.trim() : "";
+    const container = document.getElementById("product-container");
+    if (!container) return;
+    const oldMessage = container.querySelector(".no-search-results");
+    if (oldMessage) oldMessage.remove();
+    if (!query) return;
+    const visibleCards = Array.from(container.querySelectorAll(".product-card"))
+        .filter(function(card) { return card.style.display !== "none"; });
+    if (visibleCards.length > 0) return;
+    const message = document.createElement("div");
+    message.className = "no-search-results";
+    message.innerHTML = "<h3>No results found</h3><p>Try another product name or clear your search.</p><button type=\"button\">Clear search</button>";
+    message.querySelector("button").addEventListener("click", function() {
+        searchInput.value = "";
+        filterProducts(currentCategory);
+        searchInput.focus();
+    });
+    container.appendChild(message);
+}
 if (searchInput) {
 
     searchInput.addEventListener(
@@ -917,6 +937,8 @@ if (searchInput) {
             filterProducts(
                 currentCategory
             );
+
+            updateSearchEmptyState();
 
         }
     );
