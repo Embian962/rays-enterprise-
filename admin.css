@@ -746,3 +746,8 @@ body:not(.admin-authenticated) main {
 .admin-reviews { max-width: 900px; }
 .admin-reviews #admin-review-list { display: grid; gap: 10px; }
 .admin-review { border-left: 4px solid #0f766e; border-radius: 10px; padding: 14px; background: #f8fffe; box-shadow: 0 2px 8px rgba(15, 118, 110, .09); }
+
+.feedback-inbox-heading { display: flex; align-items: center; justify-content: space-between; gap: 14px; }
+.feedback-inbox-heading h2 { margin: 0; }
+.close-feedback-inbox-button { border: 1px solid #94a3b8; border-radius: 8px; padding: 8px 12px; color: #334155; background: #fff; font-weight: 750; cursor: pointer; }
+.close-feedback-inbox-button:hover { background: #f1f5f9; }

@@ -2264,3 +2264,11 @@ displayAdminReviews = function() {
 };
 
 if (adminToken) refreshFeedbackUnreadCount();
+
+const closeFeedbackInboxButton = document.getElementById("closeFeedbackInboxButton");
+if (closeFeedbackInboxButton && feedbackInbox) {
+    closeFeedbackInboxButton.addEventListener("click", function() {
+        feedbackInbox.hidden = true;
+        feedbackInboxButton?.focus();
+    });
+}
