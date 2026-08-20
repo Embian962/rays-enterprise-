@@ -23,6 +23,7 @@ CREATE TABLE orders (
   payment_method TEXT NOT NULL,
   payment_status TEXT NOT NULL DEFAULT 'Pending',
   status TEXT NOT NULL DEFAULT 'Pending',
+  client_request_id TEXT UNIQUE,
   created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
 );
 
@@ -32,6 +33,7 @@ CREATE TABLE reviews (
   product_name TEXT,
   rating SMALLINT NOT NULL CHECK (rating BETWEEN 1 AND 5),
   comment TEXT NOT NULL,
+  client_request_id TEXT UNIQUE,
   created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
 );
 

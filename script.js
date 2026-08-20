@@ -1917,11 +1917,15 @@ const checkoutForm =
 
 if (checkoutForm) {
 
+    let checkoutSubmitting = false;
+
     checkoutForm.addEventListener(
         "submit",
         async function(event) {
 
             event.preventDefault();
+
+            if (checkoutSubmitting) return;
 
 
             // CART CHECK
@@ -2111,6 +2115,15 @@ if (checkoutForm) {
 
             // CREATE ORDER
 
+            const clientRequestId = checkoutForm.dataset.requestId || crypto.randomUUID();
+            checkoutForm.dataset.requestId = clientRequestId;
+            checkoutSubmitting = true;
+            const placeOrderButton = document.getElementById("place-order-button");
+            if (placeOrderButton) {
+                placeOrderButton.disabled = true;
+                placeOrderButton.setAttribute("aria-busy", "true");
+            }
+
             let order = {
 
                 id:
@@ -2164,6 +2177,9 @@ if (checkoutForm) {
                 status:
                     "Pending",
 
+                clientRequestId:
+                    clientRequestId,
+
                 date:
                     new Date().toLocaleString()
 
@@ -2182,6 +2198,11 @@ if (checkoutForm) {
                 order = body;
             } catch (error) {
                 alert(error.message || "Your order could not be sent. Please try again.");
+                checkoutSubmitting = false;
+                if (placeOrderButton) {
+                    placeOrderButton.disabled = false;
+                    placeOrderButton.removeAttribute("aria-busy");
+                }
                 return;
             }
 
@@ -2247,6 +2268,12 @@ if (checkoutForm) {
             // RESET FORM
 
             checkoutForm.reset();
+            delete checkoutForm.dataset.requestId;
+            checkoutSubmitting = false;
+            if (placeOrderButton) {
+                placeOrderButton.disabled = false;
+                placeOrderButton.removeAttribute("aria-busy");
+            }
 
 
             // HIDE MPESA
@@ -2336,13 +2363,25 @@ const reviewForm =
 
 if (reviewForm) {
 
+    let reviewSubmitting = false;
+
     reviewForm.addEventListener("submit", async function(event) {
         event.preventDefault();
+        if (reviewSubmitting) return;
+        const clientRequestId = reviewForm.dataset.requestId || crypto.randomUUID();
+        reviewForm.dataset.requestId = clientRequestId;
+        reviewSubmitting = true;
+        const sendFeedbackButton = reviewForm.querySelector('button[type="submit"]');
+        if (sendFeedbackButton) {
+            sendFeedbackButton.disabled = true;
+            sendFeedbackButton.setAttribute("aria-busy", "true");
+        }
         const feedback = {
             customerName: document.getElementById("reviewName").value.trim(),
             productName: document.getElementById("reviewProduct").value,
             rating: Number(document.getElementById("reviewRating").value),
-            comment: document.getElementById("reviewComment").value.trim()
+            comment: document.getElementById("reviewComment").value.trim(),
+            clientRequestId: clientRequestId
         };
         try {
             const response = await fetch((window.RAYS_API_URL || "").replace(/\/$/, "") + "/api/reviews", {
@@ -2353,9 +2392,16 @@ if (reviewForm) {
             const body = await response.json().catch(function() { return {}; });
             if (!response.ok) throw new Error(body.error || "Could not send feedback.");
             reviewForm.reset();
+            delete reviewForm.dataset.requestId;
             alert("Thank you for your feedback!");
         } catch (error) {
             alert(error.message || "Your feedback could not be sent. Please try again.");
+        } finally {
+            reviewSubmitting = false;
+            if (sendFeedbackButton) {
+                sendFeedbackButton.disabled = false;
+                sendFeedbackButton.removeAttribute("aria-busy");
+            }
         }
     });
 

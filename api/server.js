@@ -62,9 +62,12 @@ const ensureSharedDataSchema = async () => {
       payment_method TEXT NOT NULL,
       payment_status TEXT NOT NULL DEFAULT 'Pending',
       status TEXT NOT NULL DEFAULT 'Pending',
+      client_request_id TEXT UNIQUE,
       created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
     )
   `);
+  await pool.query("ALTER TABLE orders ADD COLUMN IF NOT EXISTS client_request_id TEXT");
+  await pool.query("CREATE UNIQUE INDEX IF NOT EXISTS orders_client_request_id_unique ON orders (client_request_id) WHERE client_request_id IS NOT NULL");
   await pool.query(`
     CREATE TABLE IF NOT EXISTS reviews (
       id BIGSERIAL PRIMARY KEY,
@@ -72,9 +75,12 @@ const ensureSharedDataSchema = async () => {
       product_name TEXT,
       rating SMALLINT NOT NULL CHECK (rating BETWEEN 1 AND 5),
       comment TEXT NOT NULL,
+      client_request_id TEXT UNIQUE,
       created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
     )
   `);
+  await pool.query("ALTER TABLE reviews ADD COLUMN IF NOT EXISTS client_request_id TEXT");
+  await pool.query("CREATE UNIQUE INDEX IF NOT EXISTS reviews_client_request_id_unique ON reviews (client_request_id) WHERE client_request_id IS NOT NULL");
   await pool.query(`
     CREATE TABLE IF NOT EXISTS contact_messages (
       id BIGSERIAL PRIMARY KEY,
@@ -295,8 +301,18 @@ app.get("/api/orders", isAdmin, asyncRoute(async (_req, res) => {
 }));
 
 app.post("/api/orders", asyncRoute(async (req, res) => {
-  const { customerName, customerPhone, customerLocation, customerNotes = "", products, total, paymentMethod, paymentStatus = "Pending" } = req.body;
+  const { customerName, customerPhone, customerLocation, customerNotes = "", products, total, paymentMethod, paymentStatus = "Pending", clientRequestId } = req.body;
   if (!Array.isArray(products) || !products.length) return res.status(400).json({ error: "An order requires at least one product." });
+  const requestId = String(clientRequestId || "").trim() || null;
+  if (requestId) {
+    const { rows } = await pool.query("SELECT * FROM orders WHERE client_request_id=$1", [requestId]);
+    if (rows[0]) return res.json(serializeOrder(rows[0]));
+  }
+  const duplicate = await pool.query(
+    "SELECT * FROM orders WHERE customer_phone=$1 AND total=$2 AND products=$3::jsonb AND created_at > NOW() - INTERVAL '10 minutes' ORDER BY created_at DESC LIMIT 1",
+    [String(customerPhone || "").trim(), total, JSON.stringify(products)]
+  );
+  if (duplicate.rows[0]) return res.json(serializeOrder(duplicate.rows[0]));
   const client = await pool.connect();
   try {
     await client.query("BEGIN");
@@ -305,13 +321,17 @@ app.post("/api/orders", asyncRoute(async (req, res) => {
       if (!update.rowCount) throw new Error(`Insufficient stock for product ${item.id}.`);
     }
     const { rows } = await client.query(
-      "INSERT INTO orders (customer_name, customer_phone, customer_location, customer_notes, products, total, payment_method, payment_status) VALUES ($1,$2,$3,$4,$5,$6,$7,$8) RETURNING *",
-      [customerName, customerPhone, customerLocation, customerNotes, JSON.stringify(products), total, paymentMethod, paymentStatus]
+      "INSERT INTO orders (customer_name, customer_phone, customer_location, customer_notes, products, total, payment_method, payment_status, client_request_id) VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9) RETURNING *",
+      [customerName, customerPhone, customerLocation, customerNotes, JSON.stringify(products), total, paymentMethod, paymentStatus, requestId]
     );
     await client.query("COMMIT");
     res.status(201).json(serializeOrder(rows[0]));
   } catch (error) {
     await client.query("ROLLBACK");
+    if (error.code === "23505" && requestId) {
+      const { rows } = await pool.query("SELECT * FROM orders WHERE client_request_id=$1", [requestId]);
+      if (rows[0]) return res.json(serializeOrder(rows[0]));
+    }
     res.status(409).json({ error: error.message });
   } finally {
     client.release();
@@ -339,8 +359,27 @@ app.get("/api/reviews", asyncRoute(async (_req, res) => {
 }));
 
 app.post("/api/reviews", asyncRoute(async (req, res) => {
-  const { customerName, productName = null, rating, comment } = req.body;
-  const { rows } = await pool.query("INSERT INTO reviews (customer_name, product_name, rating, comment) VALUES ($1,$2,$3,$4) RETURNING *", [customerName, productName, rating, comment]);
+  const { customerName, productName = null, rating, comment, clientRequestId } = req.body;
+  const requestId = String(clientRequestId || "").trim() || null;
+  if (requestId) {
+    const { rows } = await pool.query("SELECT * FROM reviews WHERE client_request_id=$1", [requestId]);
+    if (rows[0]) return res.json(serializeReview(rows[0]));
+  }
+  const duplicate = await pool.query(
+    "SELECT * FROM reviews WHERE customer_name=$1 AND COALESCE(product_name, '')=COALESCE($2, '') AND rating=$3 AND comment=$4 AND created_at > NOW() - INTERVAL '10 minutes' ORDER BY created_at DESC LIMIT 1",
+    [customerName, productName, rating, comment]
+  );
+  if (duplicate.rows[0]) return res.json(serializeReview(duplicate.rows[0]));
+  let rows;
+  try {
+    ({ rows } = await pool.query("INSERT INTO reviews (customer_name, product_name, rating, comment, client_request_id) VALUES ($1,$2,$3,$4,$5) RETURNING *", [customerName, productName, rating, comment, requestId]));
+  } catch (error) {
+    if (error.code === "23505" && requestId) {
+      const existing = await pool.query("SELECT * FROM reviews WHERE client_request_id=$1", [requestId]);
+      if (existing.rows[0]) return res.json(serializeReview(existing.rows[0]));
+    }
+    throw error;
+  }
   res.status(201).json(serializeReview(rows[0]));
 }));
 
