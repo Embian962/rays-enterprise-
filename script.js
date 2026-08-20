@@ -1168,6 +1168,17 @@ async function loadProducts() {
         `;
 
 
+        const productImage = productCard.querySelector(".product-image-container img");
+        if (productImage) {
+            productImage.tabIndex = 0;
+            productImage.setAttribute("role", "button");
+            productImage.addEventListener("click", function() {
+                openProductImage(product.image || "rays-enterprise-catalog-logo.jpg", product.name);
+            });
+            productImage.addEventListener("keydown", function(event) {
+                if (event.key === "Enter" || event.key === " ") openProductImage(product.image || "rays-enterprise-catalog-logo.jpg", product.name);
+            });
+        }
         const addButton =
             productCard.querySelector(
                 ".add-to-cart-button"
