@@ -13,6 +13,27 @@ let cart = [];
 let myList = getMyList();
 
 let currentCategory = "all";
+// Customer-selectable light/dark storefront theme.
+const themeToggle = document.getElementById("theme-toggle");
+const savedTheme = localStorage.getItem("rays-theme") || "light";
+
+function applyTheme(theme) {
+    const darkMode = theme === "dark";
+    document.body.classList.toggle("dark-mode", darkMode);
+    if (themeToggle) {
+        themeToggle.textContent = darkMode ? "Light mode" : "Dark mode";
+        themeToggle.setAttribute("aria-label", darkMode ? "Switch to light mode" : "Switch to dark mode");
+    }
+}
+
+applyTheme(savedTheme);
+if (themeToggle) {
+    themeToggle.addEventListener("click", function() {
+        const nextTheme = document.body.classList.contains("dark-mode") ? "light" : "dark";
+        localStorage.setItem("rays-theme", nextTheme);
+        applyTheme(nextTheme);
+    });
+}
 
 
 // ==========================================
