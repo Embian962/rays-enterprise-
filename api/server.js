@@ -90,6 +90,9 @@ const ensureSharedDataSchema = async () => {
     )
   `);
   await pool.query("CREATE INDEX IF NOT EXISTS orders_created_at_index ON orders (created_at DESC)");
+  await pool.query("CREATE SEQUENCE IF NOT EXISTS customer_order_number_seq START WITH 1");
+  await pool.query("ALTER TABLE orders ADD COLUMN IF NOT EXISTS order_number BIGINT");
+  await pool.query("CREATE UNIQUE INDEX IF NOT EXISTS orders_order_number_unique ON orders (order_number) WHERE order_number IS NOT NULL");
   await pool.query("CREATE INDEX IF NOT EXISTS reviews_created_at_index ON reviews (created_at DESC)");
 };
 const allowedOrigins = new Set([
@@ -127,7 +130,7 @@ const formatBusinessDate = value => new Intl.DateTimeFormat("en-KE", {
 }).format(new Date(value));
 const serializeOrder = order => ({
   id: order.id,
-  orderNumber: "No." + String(order.id).padStart(3, "0"),
+  orderNumber: order.order_number ? "No." + String(order.order_number).padStart(3, "0") : "No." + String(order.id).padStart(3, "0"),
   customerName: order.customer_name,
   customerPhone: order.customer_phone,
   customerLocation: order.customer_location,
@@ -321,7 +324,7 @@ app.post("/api/orders", asyncRoute(async (req, res) => {
       if (!update.rowCount) throw new Error(`Insufficient stock for product ${item.id}.`);
     }
     const { rows } = await client.query(
-      "INSERT INTO orders (customer_name, customer_phone, customer_location, customer_notes, products, total, payment_method, payment_status, client_request_id) VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9) RETURNING *",
+      "INSERT INTO orders (customer_name, customer_phone, customer_location, customer_notes, products, total, payment_method, payment_status, client_request_id, order_number) VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,nextval('customer_order_number_seq')) RETURNING *",
       [customerName, customerPhone, customerLocation, customerNotes, JSON.stringify(products), total, paymentMethod, paymentStatus, requestId]
     );
     await client.query("COMMIT");

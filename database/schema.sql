@@ -44,5 +44,9 @@ CREATE TABLE contact_messages (
   created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
 );
 
-CREATE INDEX orders_created_at_index ON orders (created_at DESC);
+CREATE INDEX orders_created_at_index ON orders (created_at DESC);
+
+CREATE SEQUENCE customer_order_number_seq START WITH 1;
+ALTER TABLE orders ADD COLUMN order_number BIGINT;
+CREATE UNIQUE INDEX orders_order_number_unique ON orders (order_number) WHERE order_number IS NOT NULL;
 CREATE INDEX reviews_created_at_index ON reviews (created_at DESC);
