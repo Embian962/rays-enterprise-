@@ -139,6 +139,16 @@ if (adminLogoutButton) {
 
 const productForm =
     document.getElementById("productForm");
+const addProductSection = document.getElementById("add-product-section");
+const openProductFormButton = document.getElementById("openProductFormButton");
+
+if (openProductFormButton && addProductSection) {
+    openProductFormButton.addEventListener("click", function() {
+        addProductSection.hidden = false;
+        addProductSection.scrollIntoView({ behavior: "smooth", block: "start" });
+        setTimeout(function() { document.getElementById("productName")?.focus(); }, 350);
+    });
+}
 
 // The API accepts up to 25 MB of JSON. A base64 data URL is about 33% larger
 // than the source image, so cap the selected image before trying to upload it.
