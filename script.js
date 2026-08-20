@@ -510,6 +510,7 @@ function addToCart(productName, color) {
 
 
     displayCart();
+    return true;
 
 }
 
@@ -1210,12 +1211,14 @@ async function loadProducts() {
                             ".product-colour-select"
                         );
 
-                    addToCart(
+                    if (addToCart(
                         product.name,
                         colorSelect
                             ? colorSelect.value
                             : ""
-                    );
+                    )) {
+                        showAddToCartSuccess(addButton);
+                    }
 
                 }
             );
@@ -2464,3 +2467,28 @@ displayCart();
 displayMyList();
 
 updatePaymentMethod();
+
+
+function showAddToCartSuccess(button) {
+    const cartCount = document.getElementById("cart-item-count");
+    button.classList.remove("is-added");
+    void button.offsetWidth;
+    button.classList.add("is-added");
+    button.textContent = "? Added to Cart";
+    if (cartCount) {
+        cartCount.classList.remove("cart-count-pop");
+        void cartCount.offsetWidth;
+        cartCount.classList.add("cart-count-pop");
+    }
+    clearTimeout(button._successTimer);
+    button._successTimer = setTimeout(function() {
+        button.classList.remove("is-added");
+        button.textContent = "Add to Cart";
+    }, 1600);
+}
+
+document.addEventListener("click", function(event) {
+    const button = event.target.closest(".add-to-cart-button");
+    if (!button || button.disabled) return;
+    setTimeout(function() { showAddToCartSuccess(button); }, 0);
+});
