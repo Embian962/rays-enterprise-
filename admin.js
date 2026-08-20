@@ -2262,3 +2262,5 @@ displayAdminReviews = function() {
     displayAdminReviewsWithInboxBadge();
     refreshFeedbackUnreadCount();
 };
+
+if (adminToken) refreshFeedbackUnreadCount();
