@@ -2069,3 +2069,13 @@ footer a:hover { color: var(--accent); }
     .products { grid-template-columns: 1fr; }
 }
 
+/* Compact catalog cards */
+.product-image-container { aspect-ratio: 1 / .68; }
+.product-info { padding: 12px 14px 14px; }
+.product-card h3 { min-height: 0; margin: 7px 0 2px; font-size: .98rem; }
+.product-price { margin-bottom: 6px; font-size: 1.05rem; }
+.stock-available, .stock-unavailable { margin-bottom: 9px; padding: 3px 7px; }
+.product-colour-label { margin-top: 3px; }
+.product-card .add-to-cart-button,
+.save-to-list-button { padding: 9px 12px; }
+.save-to-list-button { margin-top: 6px; }
