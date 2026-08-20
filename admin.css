@@ -724,3 +724,6 @@ body:not(.admin-authenticated) main {
     .admin-order-actions select { width: 100%; }
 }
 
+.notification-button { margin-top: 10px; padding: 8px 12px; color: #fff; background: #0f766e; }
+.notification-button:hover { background: #115e59; }
+#notification-status { margin-left: 8px; color: #64748b; font-size: .85rem; }

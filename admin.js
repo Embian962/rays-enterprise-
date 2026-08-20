@@ -1968,7 +1968,43 @@ displayAdminReviews();
 // SHARED ORDERS AND CUSTOMER FEEDBACK
 // ==========================================
 
-let sharedOrders = [];
+let sharedOrders = [];let notificationBaselineReady = false;
+let knownOrderIds = new Set();
+const notificationButton = document.getElementById("enable-order-notifications");
+const notificationStatus = document.getElementById("notification-status");
+
+async function enableOrderNotifications() {
+    if (!("Notification" in window)) {
+        if (notificationStatus) notificationStatus.textContent = "Browser notifications are not supported.";
+        return;
+    }
+    const permission = await Notification.requestPermission();
+    if (notificationStatus) notificationStatus.textContent = permission === "granted" ? "Notifications enabled." : "Notifications are blocked.";
+    if (notificationButton) notificationButton.style.display = permission === "granted" ? "none" : "inline-block";
+}
+
+function notifyNewOrders(orders) {
+    if (!notificationBaselineReady) {
+        knownOrderIds = new Set(orders.map(function(order) { return String(order.id); }));
+        notificationBaselineReady = true;
+        return;
+    }
+    if (!("Notification" in window) || Notification.permission !== "granted") return;
+    orders.forEach(function(order) {
+        const id = String(order.id);
+        if (knownOrderIds.has(id)) return;
+        knownOrderIds.add(id);
+        const notification = new Notification("New order " + (order.orderNumber || ("No." + id.padStart(3, "0"))), {
+            body: (order.customerName || "A customer") + " placed an order for KSh " + Number(order.total || 0).toLocaleString() + ".",
+            icon: "rays-enterprise-logo.jpg",
+            tag: "order-" + id
+        });
+        notification.onclick = function() { window.focus(); notification.close(); };
+    });
+}
+
+if (notificationButton) notificationButton.addEventListener("click", enableOrderNotifications);
+
 
 function renderSharedOrders(filter = activeOrderFilter) {
     activeOrderFilter = filter;
