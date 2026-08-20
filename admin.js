@@ -2074,7 +2074,9 @@ async function loadSharedOrders() {
     try {
         const response = await adminRequest("/api/orders");
         if (!response) return;
-        sharedOrders = await response.json();
+        const latestOrders = await response.json();
+        notifyNewOrders(latestOrders);
+        sharedOrders = latestOrders;
         renderSharedOrders(activeOrderFilter);
         updateDashboard();
     } catch (error) {
