@@ -836,6 +836,15 @@ const searchInput =
         "searchInput"
     );
 
+const searchButton = document.getElementById("search-submit");
+if (searchButton) {
+    searchButton.addEventListener("click", function() {
+        filterProducts(currentCategory);
+        if (searchInput) searchInput.blur();
+        updateSearchEmptyState();
+    });
+}
+
 
 function filterProducts(category) {
 

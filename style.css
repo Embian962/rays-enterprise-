@@ -2165,3 +2165,8 @@ body.dark-mode .my-order-product { border-color: #304345; }
 .no-search-results button { margin-top: 16px; border: 0; border-radius: 9px; padding: 10px 15px; color: #fff; background: var(--brand); font-weight: 800; cursor: pointer; }
 body.dark-mode .no-search-results { border-color: #55706e; color: #b7c9c7; background: #142123; }
 body.dark-mode .no-search-results h3 { color: #f0f8f7; }
+.search-box { display: flex; gap: 8px; }
+.search-box input { flex: 1; min-width: 0; }
+.search-submit { border: 0; border-radius: 10px; padding: 0 16px; color: #fff; background: var(--brand); font-weight: 800; cursor: pointer; }
+.search-submit:hover { background: var(--brand-deep); }
+body.dark-mode .search-submit { color: #102526; background: #8ed2c5; }
