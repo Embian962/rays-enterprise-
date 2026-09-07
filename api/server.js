@@ -54,6 +54,7 @@ const ensureSharedDataSchema = async () => {
     CREATE TABLE IF NOT EXISTS orders (
       id BIGSERIAL PRIMARY KEY,
       customer_name TEXT NOT NULL,
+      customer_email TEXT,
       customer_phone TEXT NOT NULL,
       customer_location TEXT NOT NULL,
       customer_notes TEXT,
@@ -66,6 +67,7 @@ const ensureSharedDataSchema = async () => {
       created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
     )
   `);
+  await pool.query("ALTER TABLE orders ADD COLUMN IF NOT EXISTS customer_email TEXT");
   await pool.query("ALTER TABLE orders ADD COLUMN IF NOT EXISTS client_request_id TEXT");
   await pool.query("CREATE UNIQUE INDEX IF NOT EXISTS orders_client_request_id_unique ON orders (client_request_id) WHERE client_request_id IS NOT NULL");
   await pool.query(`
@@ -132,6 +134,7 @@ const serializeOrder = order => ({
   id: order.id,
   orderNumber: order.order_number ? "No." + String(order.order_number).padStart(3, "0") : "No." + String(order.id).padStart(3, "0"),
   customerName: order.customer_name,
+  customerEmail: order.customer_email || "",
   customerPhone: order.customer_phone,
   customerLocation: order.customer_location,
   customerNotes: order.customer_notes || "",
@@ -298,13 +301,33 @@ app.post("/api/orders/track", asyncRoute(async (req, res) => {
   if (!rows[0]) return res.status(404).json({ error: "Order not found." });
   res.json(serializeOrder(rows[0]));
 }));
+const getCustomerEmailFromSession = async req => {
+  const authorization = String(req.headers.authorization || "");
+  const token = authorization.match(/^Bearer\s+(.+)$/i)?.[1];
+  const supabaseUrl = process.env.SUPABASE_URL;
+  const anonKey = process.env.SUPABASE_ANON_KEY;
+  if (!token || !supabaseUrl || !anonKey) return null;
+  const response = await fetch(`${supabaseUrl.replace(/\/$/, "")}/auth/v1/user`, {
+    headers: { apikey: anonKey, Authorization: `Bearer ${token}` }
+  });
+  if (!response.ok) return null;
+  const user = await response.json();
+  return String(user.email || "").trim().toLowerCase() || null;
+};
+
+app.post("/api/orders/mine", asyncRoute(async (req, res) => {
+  const email = await getCustomerEmailFromSession(req);
+  if (!email) return res.status(401).json({ error: "Please sign in to view your orders." });
+  const { rows } = await pool.query("SELECT * FROM orders WHERE LOWER(customer_email)=$1 ORDER BY created_at DESC", [email]);
+  res.json(rows.map(serializeOrder));
+}));
 app.get("/api/orders", isAdmin, asyncRoute(async (_req, res) => {
   const { rows } = await pool.query("SELECT * FROM orders ORDER BY created_at DESC");
   res.json(rows.map(serializeOrder));
 }));
 
 app.post("/api/orders", asyncRoute(async (req, res) => {
-  const { customerName, customerPhone, customerLocation, customerNotes = "", products, total, paymentMethod, paymentStatus = "Pending", clientRequestId } = req.body;
+  const { customerName, customerEmail = "", customerPhone, customerLocation, customerNotes = "", products, total, paymentMethod, paymentStatus = "Pending", clientRequestId } = req.body;
   if (!Array.isArray(products) || !products.length) return res.status(400).json({ error: "An order requires at least one product." });
   const requestId = String(clientRequestId || "").trim() || null;
   if (requestId) {
@@ -324,8 +347,8 @@ app.post("/api/orders", asyncRoute(async (req, res) => {
       if (!update.rowCount) throw new Error(`Insufficient stock for product ${item.id}.`);
     }
     const { rows } = await client.query(
-      "INSERT INTO orders (customer_name, customer_phone, customer_location, customer_notes, products, total, payment_method, payment_status, client_request_id, order_number) VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,nextval('customer_order_number_seq')) RETURNING *",
-      [customerName, customerPhone, customerLocation, customerNotes, JSON.stringify(products), total, paymentMethod, paymentStatus, requestId]
+      "INSERT INTO orders (customer_name, customer_email, customer_phone, customer_location, customer_notes, products, total, payment_method, payment_status, client_request_id, order_number) VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,nextval('customer_order_number_seq')) RETURNING *",
+      [customerName, String(customerEmail || "").trim().toLowerCase() || null, customerPhone, customerLocation, customerNotes, JSON.stringify(products), total, paymentMethod, paymentStatus, requestId]
     );
     await client.query("COMMIT");
     res.status(201).json(serializeOrder(rows[0]));
@@ -415,3 +438,5 @@ app.use((error, _req, res, _next) => {
 await ensureProductSchema();
 await ensureSharedDataSchema();
 app.listen(port, () => console.log(`Ray's Enterprise API listening on port ${port}`));
+
+

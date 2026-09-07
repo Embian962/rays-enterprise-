@@ -1,3 +1,48 @@
+
+// ==========================================
+// CUSTOMER GOOGLE SIGN-IN
+// ==========================================
+
+(function setupCustomerAuth() {
+    const accountButton = document.getElementById("customer-auth-button");
+    const page = document.getElementById("account-page");
+    const back = document.getElementById("account-back-button");
+    const status = document.getElementById("account-page-status");
+    const title = document.getElementById("account-page-title");
+    const signIn = document.getElementById("account-page-sign-in");
+    const createAccount = document.getElementById("account-page-create");
+    const signOut = document.getElementById("account-page-sign-out");
+    if (!accountButton || !page || !window.supabase || !window.RAYS_SUPABASE_URL || !window.RAYS_SUPABASE_ANON_KEY) return;
+    const client = window.supabase.createClient(window.RAYS_SUPABASE_URL, window.RAYS_SUPABASE_ANON_KEY);
+    let session = null;
+    const update = function(nextSession) {
+        session = nextSession;
+        window.raysCustomerSession = session;
+        const user = session && session.user;
+        if (user) {
+            const name = user.user_metadata?.full_name || user.email || "Customer";
+            title.textContent = "Your account"; status.textContent = "Signed in as " + name;
+            signIn.hidden = true; createAccount.hidden = true; signOut.hidden = false;
+        } else {
+            title.textContent = "Welcome"; status.textContent = "Sign in to save your list and view your orders.";
+            signIn.hidden = false; createAccount.hidden = false; signOut.hidden = true;
+        }
+    };
+    const openPage = function() { page.hidden = false; document.body.classList.add("account-page-open"); update(session); window.scrollTo(0, 0); };
+    const closePage = function() { page.hidden = true; document.body.classList.remove("account-page-open"); };
+    const startGoogle = async function() {
+        const redirectBase = /^(localhost|127\.)/.test(window.location.hostname) ? "https://rays-enterprise-sw87.vercel.app" : window.location.origin;
+        const result = await client.auth.signInWithOAuth({ provider: "google", options: { redirectTo: redirectBase + window.location.pathname } });
+        if (result.error) alert("Google sign-in is not available yet. Please try again later.");
+    };
+    accountButton.addEventListener("click", openPage);
+    back.addEventListener("click", closePage);
+    signIn.addEventListener("click", startGoogle); createAccount.addEventListener("click", startGoogle);
+    signOut.addEventListener("click", async function() { await client.auth.signOut(); update(null); });
+    client.auth.getSession().then(function(result) { update(result.data.session); });
+    client.auth.onAuthStateChange(function(_event, nextSession) { update(nextSession); });
+})();
+
 // ==========================================
 // RAY'S ENTERPRISE
 // CUSTOMER CATALOG
@@ -382,7 +427,7 @@ function displayMyList() {
         const item = document.createElement("article");
         item.className = "my-list-item";
         item.innerHTML = `
-            <img src="${product.image || "rays-enterprise-catalog-logo.jpg"}" alt="${product.name}">
+            <img src="${(product.image_url || product.image) || "rays-enterprise-catalog-logo.jpg"}" alt="${product.name}">
             <div>
                 <h3>${product.name}</h3>
                 <p>KSh ${Number(product.price || 0).toLocaleString()}</p>
@@ -465,7 +510,7 @@ function addToCart(productName, color) {
     if (existingProduct) {
 
         if (
-            existingProduct.quantity >= stock
+            stock > 0 && existingProduct.quantity >= stock
         ) {
 
             alert(
@@ -531,12 +576,11 @@ function displayCart() {
         document.getElementById(
             "cart-total"
         );
-
-
-    const cartItemCount =
+const cartItemCount =
         document.getElementById(
             "cart-item-count"
         );
+    const topCartItemCount = document.getElementById("top-cart-item-count");
 
 
     if (!cartItems) {
@@ -583,6 +627,7 @@ function displayCart() {
 
             cartItemCount.textContent =
                 "0";
+            if (topCartItemCount) topCartItemCount.textContent = "0";
 
         }
 
@@ -700,6 +745,7 @@ function displayCart() {
 
         cartItemCount.textContent =
             itemCount;
+        if (topCartItemCount) topCartItemCount.textContent = itemCount;
 
     }
 
@@ -847,6 +893,10 @@ if (searchButton) {
 }
 
 
+function categorySlug(category) {
+    return String(category || "").toLowerCase().trim().replace(/&/g, "and").replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "");
+}
+
 function filterProducts(category) {
 
     currentCategory =
@@ -993,16 +1043,18 @@ async function loadProducts() {
     }
 
     const apiUrl = (window.RAYS_API_URL || "").replace(/\/$/, "");
+    let fetchedProducts = null;
 
-    if (apiUrl) {
+    {
         try {
-            const response = await fetch(apiUrl + "/api/products");
+            const response = await fetch(apiUrl + "/api/products?v=" + Date.now());
 
             if (!response.ok) {
                 throw new Error("Could not load products from the store server.");
             }
 
-            saveProducts(await response.json());
+            fetchedProducts = await response.json();
+            try { saveProducts(fetchedProducts); } catch (storageError) { console.warn("Catalog loaded but could not be cached locally.", storageError); }
         } catch (error) {
             console.warn("Using saved catalog because the store server is unavailable.", error);
         }
@@ -1019,8 +1071,27 @@ async function loadProducts() {
     }
 
 
-    const products =
-        getProducts();
+    const products = fetchedProducts || getProducts();
+
+    const categoryContainer = document.querySelector(".categories");
+    if (categoryContainer) {
+        const categories = {};
+        products.forEach(function(p) { if (p.category) categories[p.category] = (categories[p.category] || 0) + 1; });
+        categoryContainer.innerHTML = "";
+        const closeCategoryButton = document.createElement("button");
+        closeCategoryButton.type = "button"; closeCategoryButton.className = "category-drawer-close"; closeCategoryButton.setAttribute("aria-label", "Close categories"); closeCategoryButton.textContent = "×";
+        closeCategoryButton.addEventListener("click", function() { document.body.classList.remove("categories-drawer-open"); document.getElementById("customer-categories-toggle")?.setAttribute("aria-expanded", "false"); });
+        categoryContainer.appendChild(closeCategoryButton);
+        const allButton = document.createElement("button");
+        allButton.type = "button"; allButton.className = "category-drawer-item"; allButton.textContent = "All Products";
+        allButton.addEventListener("click", function() { filterProducts("all"); }); categoryContainer.appendChild(allButton);
+        Object.keys(categories).sort().forEach(function(category) {
+            const slug = categorySlug(category); const button = document.createElement("button");
+            button.type = "button"; button.className = "category-drawer-item"; button.dataset.category = slug;
+            button.textContent = category;
+            button.addEventListener("click", function() { filterProducts(slug); }); categoryContainer.appendChild(button);
+        });
+    }
 
 
     productContainer.className = "products";
@@ -1051,6 +1122,12 @@ async function loadProducts() {
     }
 
 
+    products.sort(function(a, b) {
+        const aHasImage = !!String(a.image_url || a.image || "").trim();
+        const bHasImage = !!String(b.image_url || b.image || "").trim();
+        return Number(bHasImage) - Number(aHasImage);
+    });
+
     products.forEach(function(product) {
 
         const productCard =
@@ -1059,7 +1136,7 @@ async function loadProducts() {
 
         productCard.className =
             "product-card " +
-            product.category;
+            categorySlug(product.category);
 
 
         const stock =
@@ -1084,7 +1161,7 @@ async function loadProducts() {
             <div class="product-image-container">
 
                 <img
-                    src="${product.image || "rays-enterprise-catalog-logo.jpg"}"
+                    src="${(product.image_url || product.image) || "rays-enterprise-catalog-logo.jpg"}"
                     alt="${product.name}"
                 >
 
@@ -1108,21 +1185,6 @@ async function loadProducts() {
                 </p>
 
 
-                <p class="${
-                    isAvailable
-                        ? "stock-available"
-                        : "stock-unavailable"
-                }">
-
-                    ${
-                        isAvailable
-                            ? stock + " in stock"
-                            : "Out of stock"
-                    }
-
-                </p>
-
-
                 ${
                     colors.length > 0
                         ? `
@@ -1142,18 +1204,10 @@ async function loadProducts() {
                 <button
                     type="button"
                     class="add-to-cart-button"
-                    ${
-                        !isAvailable
-                            ? "disabled"
-                            : ""
-                    }
+                    ""
                 >
 
-                    ${
-                        isAvailable
-                            ? "Add to Cart"
-                            : "Out of Stock"
-                    }
+                    "Add to Cart"
 
                 </button>
 
@@ -1174,10 +1228,10 @@ async function loadProducts() {
             productImage.tabIndex = 0;
             productImage.setAttribute("role", "button");
             productImage.addEventListener("click", function() {
-                openProductImage(product.image || "rays-enterprise-catalog-logo.jpg", product.name);
+                openProductImage((product.image_url || product.image) || "rays-enterprise-catalog-logo.jpg", product.name);
             });
             productImage.addEventListener("keydown", function(event) {
-                if (event.key === "Enter" || event.key === " ") openProductImage(product.image || "rays-enterprise-catalog-logo.jpg", product.name);
+                if (event.key === "Enter" || event.key === " ") openProductImage((product.image_url || product.image) || "rays-enterprise-catalog-logo.jpg", product.name);
             });
         }
         const addButton =
@@ -1197,10 +1251,7 @@ async function loadProducts() {
         }
 
 
-        if (
-            isAvailable &&
-            addButton
-        ) {
+        if (addButton) {
 
             addButton.addEventListener(
                 "click",
@@ -1644,7 +1695,20 @@ async function refreshCustomerOrderStatuses() {
     if (!savedOrders.length) return;
 
     const apiUrl = (window.RAYS_API_URL || "").replace(/\/$/, "");
-    const refreshedOrders = await Promise.all(savedOrders.map(async function(order) {
+    let fetchedProducts = null;
+    let ordersForRefresh = savedOrders;
+    const session = window.raysCustomerSession;
+    if (session?.access_token) {
+        try {
+            const accountResponse = await fetch(apiUrl + "/api/orders/mine", { method: "POST", headers: { "Content-Type": "application/json", Authorization: "Bearer " + session.access_token } });
+            if (accountResponse.ok) {
+                const accountOrders = await accountResponse.json();
+                saveOrders(accountOrders);
+                ordersForRefresh = accountOrders;
+            }
+        } catch (error) { console.warn("Could not load account orders.", error); }
+    }
+    const refreshedOrders = await Promise.all(ordersForRefresh.map(async function(order) {
         if (!order.id || !order.customerPhone) return order;
         try {
             const response = await fetch(apiUrl + "/api/orders/track", {
@@ -2036,8 +2100,7 @@ if (checkoutForm) {
 
             // PRODUCTS
 
-            const products =
-                getProducts();
+            const products = getProducts();
 
 
             // STOCK CHECK
@@ -2182,6 +2245,9 @@ if (checkoutForm) {
 
                 clientRequestId:
                     clientRequestId,
+
+                customerEmail:
+                    window.raysCustomerSession?.user?.email || "",
 
                 date:
                     new Date().toLocaleString()
@@ -2470,6 +2536,8 @@ updatePaymentMethod();
 
 
 function showAddToCartSuccess(button) {
+    const topCartLink = document.querySelector("a[href=\"#cart\"]");
+    if (topCartLink) { topCartLink.classList.remove("is-bouncing"); void topCartLink.offsetWidth; topCartLink.classList.add("is-bouncing"); }
     const cartCount = document.getElementById("cart-item-count");
     button.classList.remove("is-added");
     void button.offsetWidth;
@@ -2492,3 +2560,53 @@ document.addEventListener("click", function(event) {
     if (!button || button.disabled) return;
     setTimeout(function() { showAddToCartSuccess(button); }, 0);
 });
+
+
+
+
+
+
+
+
+
+
+
+
+
+// Trust information side dashboard
+(function setupTrustPanel() {
+    const panel = document.getElementById("customer-trust");
+    const open = document.getElementById("customer-trust-toggle");
+    const close = document.getElementById("close-customer-trust");
+    if (!panel || !open || !close) return;
+    const setOpen = function(value) { panel.hidden = !value; document.body.classList.toggle("trust-panel-open", value); open.setAttribute("aria-expanded", String(value)); };
+    open.addEventListener("click", function() { setOpen(true); });
+    close.addEventListener("click", function() { setOpen(false); });
+})();
+
+// Customer categories drawer
+(function setupCategoriesDrawer() {
+    const toggle = document.getElementById("customer-categories-toggle");
+    const panel = document.querySelector(".categories");
+    if (!toggle || !panel) return;
+    const close = function() { document.body.classList.remove("categories-drawer-open"); toggle.setAttribute("aria-expanded", "false"); };
+    toggle.addEventListener("click", function() { const open = !document.body.classList.contains("categories-drawer-open"); document.body.classList.toggle("categories-drawer-open", open); toggle.setAttribute("aria-expanded", String(open)); });
+    panel.addEventListener("click", function(event) { if (event.target.closest("button")) close(); });
+    document.addEventListener("keydown", function(event) { if (event.key === "Escape") close(); });
+})();
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+

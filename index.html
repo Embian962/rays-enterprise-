@@ -90,12 +90,14 @@
 
 <nav>
 
+    <button type="button" id="customer-categories-toggle" class="customer-categories-toggle" aria-expanded="false">Categories</button>
+
     <a href="#products" onclick="showProducts(event)">
         Products
     </a>
 
     <a href="#cart" onclick="showCart(event)">
-        Cart
+        <span class="cart-icon" aria-hidden="true">🛒</span> Cart (<span id="top-cart-item-count">0</span>)
     </a>
 
     <a href="#my-list" onclick="showMyList(event)">
@@ -114,11 +116,23 @@
         Contact
     </a>
 
+    <button type="button" id="customer-trust-toggle" class="customer-trust-toggle" aria-expanded="false">Why shop with us</button>
+
     <a href="#reviews">
         Reviews
     </a>
 
-    <button type="button" id="theme-toggle" class="theme-toggle" aria-label="Switch to dark mode">
+        <div class="account-menu-wrap">
+        <button type="button" id="customer-auth-button" class="customer-auth-button" aria-expanded="false">Account</button>
+        <div id="customer-account-menu" class="customer-account-menu" hidden>
+            <p id="customer-account-status" class="customer-account-status">Welcome</p>
+            <button type="button" id="customer-sign-in" class="account-menu-action">Sign in with Google</button>
+            <button type="button" id="customer-create-account" class="account-menu-action">Create account</button>
+            <button type="button" id="customer-sign-out" class="account-menu-action" hidden>Sign out</button>
+        </div>
+    </div>
+
+<button type="button" id="theme-toggle" class="theme-toggle" aria-label="Switch to dark mode">
         Dark mode
     </button>
 
@@ -229,15 +243,18 @@
 
         </div>
 
-
-        <div
-            class="products"
+        <div class="products"
             id="product-container"
         ></div>
 
     </section>
 
 </main>
+
+<section id="account-page" class="account-page" hidden>
+<button type="button" id="account-back-button" class="account-back-button">← Back to shopping</button>
+<div class="account-page-content"><div class="account-brand-panel"><img src="rays-enterprise-catalog-logo.jpg" alt="Ray's Enterprise logo"><h2>Ray's Enterprise</h2><p>Your home essentials store</p></div><div class="account-login-panel"><p class="account-eyebrow">Customer account</p><h2 id="account-page-title">Welcome</h2><p id="account-page-status">Sign in to save your list and view your orders.</p><button type="button" id="account-page-sign-in" class="account-primary-action">Sign in with Google</button><button type="button" id="account-page-create" class="account-secondary-action">Create account with Google</button><button type="button" id="account-page-sign-out" class="account-secondary-action" hidden>Sign out</button></div></div>
+</section>
 
 <section id="my-list" class="my-list-section" style="display: none;">
 
@@ -251,6 +268,9 @@
 
 </section>
 
+
+<section id="customer-trust" class="customer-trust-section" hidden>
+    <button type="button" id="close-customer-trust" class="close-customer-trust" aria-label="Close trust information">×</button><div class="customer-trust-inner"><div class="customer-trust-heading"><p class="trust-eyebrow">Shop with confidence</p><h2>Why customers choose Ray's Enterprise</h2><p>Friendly service, clear prices, and support when you need it.</p></div><div class="trust-cards"><article class="trust-card"><span class="trust-icon">🚚</span><h3>Reliable delivery</h3><p>We arrange convenient delivery and confirm your order before dispatch.</p></article><article class="trust-card"><span class="trust-icon">💬</span><h3>Real customer support</h3><p>Ask a question or confirm an order directly with our team on WhatsApp.</p><a href="https://wa.me/254757598447" target="_blank" rel="noopener noreferrer">Chat with us</a></article><article class="trust-card"><span class="trust-icon">↩</span><h3>Clear returns guidance</h3><p>Contact us promptly if an item arrives damaged or differs from your confirmed order.</p><a href="#contact">Contact the store</a></article><article class="trust-card"><span class="trust-icon">📍</span><h3>Visit our store</h3><p>Amona Arcade, 1st Floor, Shops 14 &amp; 15.</p><a href="https://www.google.com/maps/search/?api=1&amp;query=Amona+Arcade" target="_blank" rel="noopener noreferrer">Open in Google Maps</a></article></div><div class="trust-policy"><strong>Safe ordering:</strong> Choose pay on delivery or M-Pesa at checkout. We confirm your order before processing.</div></div></section>
 
 <!-- ==========================================
      SHOPPING CART
@@ -815,9 +835,16 @@
 </footer>
 
 
-<script src="api-config.js"></script>
-<script src="script.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="api-config.js?v=20260901-2"></script>
+<script src="script.js?v=20260901-9"></script>
 
 </body>
 
 </html>
+
+
+
+
+
+
