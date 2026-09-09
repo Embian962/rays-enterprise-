@@ -15,7 +15,7 @@
 
     <link
         rel="stylesheet"
-        href="admin.css"
+        href="admin.css?v=20260909-1"
     >
 
 </head>
@@ -357,6 +357,8 @@
             </div>
 
 
+            <div class="admin-product-search"><label for="admin-product-search">Search products</label><input type="search" id="admin-product-search" placeholder="Search by name, category, or ID" autocomplete="off"></div>
+
             <div id="admin-product-list"></div>
 
         </section>
@@ -555,7 +557,23 @@
         </section>
 
 
-    </main>
+    
+
+        <section class="image-section" id="image-section" hidden>
+            <h2>Add Product Image</h2>
+            <p id="image-product-name"></p>
+            <form id="imageForm">
+                <input type="hidden" id="imageProductIndex">
+                <label for="imageFile">Product Image</label>
+                <input type="file" id="imageFile" accept="image/*" required>
+                <div class="product-form-actions">
+                    <button type="submit">Save Image</button>
+                    <button type="button" id="cancelImageButton">Cancel</button>
+                </div>
+            </form>
+        </section>
+
+</main>
 
 
 
@@ -564,7 +582,7 @@
     ========================== -->
 
     <script src="api-config.js"></script>
-    <script src="admin.js"></script>
+    <script src="admin.js?v=20260909-1"></script>
 
 
 </body>
@@ -572,3 +590,5 @@
 </html>
 
 <script src="admin-access.js"></script>
+
+

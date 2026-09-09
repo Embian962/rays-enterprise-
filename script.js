@@ -156,7 +156,9 @@ function getCartTotal() {
 // SHOW CHECKOUT
 // ==========================================
 
-function showCheckout() {
+function showCheckout(event) {
+
+    if (event) event.preventDefault();
 
     if (cart.length === 0) {
 
@@ -427,7 +429,10 @@ function displayMyList() {
         const item = document.createElement("article");
         item.className = "my-list-item";
         item.innerHTML = `
-            <img src="${(product.image_url || product.image) || "rays-enterprise-catalog-logo.jpg"}" alt="${product.name}">
+            <img src="${(product.image_url || product.image) || "rays-enterprise-catalog-logo.jpg"}" alt="${product.name}"
+                    loading="${productIndex < 8 ? "eager" : "lazy"}"
+                    decoding="async"
+                >
             <div>
                 <h3>${product.name}</h3>
                 <p>KSh ${Number(product.price || 0).toLocaleString()}</p>
@@ -1077,22 +1082,23 @@ async function loadProducts() {
     if (categoryContainer) {
         const categories = {};
         products.forEach(function(p) { if (p.category) categories[p.category] = (categories[p.category] || 0) + 1; });
-        categoryContainer.innerHTML = "";
-        const closeCategoryButton = document.createElement("button");
-        closeCategoryButton.type = "button"; closeCategoryButton.className = "category-drawer-close"; closeCategoryButton.setAttribute("aria-label", "Close categories"); closeCategoryButton.textContent = "×";
-        closeCategoryButton.addEventListener("click", function() { document.body.classList.remove("categories-drawer-open"); document.getElementById("customer-categories-toggle")?.setAttribute("aria-expanded", "false"); });
-        categoryContainer.appendChild(closeCategoryButton);
-        const allButton = document.createElement("button");
-        allButton.type = "button"; allButton.className = "category-drawer-item"; allButton.textContent = "All Products";
-        allButton.addEventListener("click", function() { filterProducts("all"); }); categoryContainer.appendChild(allButton);
+        const existing = new Set(Array.from(categoryContainer.querySelectorAll("button[data-category]"), function(button) { return button.dataset.category; }));
+        if (!categoryContainer.querySelector(".category-drawer-close")) {
+            const closeCategoryButton = document.createElement("button");
+            closeCategoryButton.type = "button"; closeCategoryButton.className = "category-drawer-close"; closeCategoryButton.setAttribute("aria-label", "Close categories"); closeCategoryButton.textContent = "×";
+            closeCategoryButton.addEventListener("click", function() { document.body.classList.remove("categories-drawer-open"); document.getElementById("customer-categories-toggle")?.setAttribute("aria-expanded", "false"); });
+            categoryContainer.prepend(closeCategoryButton);
+        }
         Object.keys(categories).sort().forEach(function(category) {
-            const slug = categorySlug(category); const button = document.createElement("button");
+            const slug = categorySlug(category);
+            if (existing.has(slug)) return;
+            const button = document.createElement("button");
             button.type = "button"; button.className = "category-drawer-item"; button.dataset.category = slug;
             button.textContent = category;
-            button.addEventListener("click", function() { filterProducts(slug); }); categoryContainer.appendChild(button);
+            button.addEventListener("click", function() { filterProducts(slug); });
+            categoryContainer.appendChild(button);
         });
     }
-
 
     productContainer.className = "products";
 
@@ -1128,7 +1134,7 @@ async function loadProducts() {
         return Number(bHasImage) - Number(aHasImage);
     });
 
-    products.forEach(function(product) {
+    products.forEach(function(product, productIndex) {
 
         const productCard =
             document.createElement("div");
@@ -1163,6 +1169,8 @@ async function loadProducts() {
                 <img
                     src="${(product.image_url || product.image) || "rays-enterprise-catalog-logo.jpg"}"
                     alt="${product.name}"
+                    loading="${productIndex < 8 ? "eager" : "lazy"}"
+                    decoding="async"
                 >
 
             </div>
@@ -2594,6 +2602,10 @@ document.addEventListener("click", function(event) {
     panel.addEventListener("click", function(event) { if (event.target.closest("button")) close(); });
     document.addEventListener("keydown", function(event) { if (event.key === "Escape") close(); });
 })();
+
+
+
+
 
 
 

@@ -754,3 +754,28 @@ body:not(.admin-authenticated) main {
 
 .toggle-sales-balance-button { margin-top: 8px; border: 1px solid #b8cfcc; border-radius: 8px; padding: 7px 10px; color: #0f766e; background: #fff; font-size: .82rem; font-weight: 800; cursor: pointer; }
 .toggle-sales-balance-button:hover { background: #edf7f5; border-color: #0f766e; }
+
+/* Add Image opens as an immediate centered dialog */
+.image-section[hidden] { display: none !important; }
+.image-section:not([hidden]) { position: fixed; inset: 0; z-index: 1000; display: flex; flex-direction: column; justify-content: center; width: min(92vw, 560px); max-height: min(86vh, 620px); margin: auto; padding: 28px; overflow: auto; border-radius: 16px; background: var(--admin-surface, #fff); box-shadow: 0 24px 80px rgba(0,0,0,.35); }
+body.image-editor-open::after { content: ""; position: fixed; inset: 0; z-index: 999; background: rgba(9, 24, 25, .62); }
+body.image-editor-open { overflow: hidden; }
+
+/* Edit Product opens as an immediate centered dialog */
+.edit-section:not([hidden]) { position: fixed; inset: 0; z-index: 1000; display: block !important; width: min(92vw, 680px); max-height: min(88vh, 760px); margin: auto; padding: 28px; overflow: auto; border-radius: 16px; background: var(--admin-surface, #fff); box-shadow: 0 24px 80px rgba(0,0,0,.35); }
+body.edit-editor-open::after { content: ""; position: fixed; inset: 0; z-index: 999; background: rgba(9, 24, 25, .62); }
+body.edit-editor-open { overflow: hidden; }
+
+/* Keep the Edit dialog above its backdrop */
+.edit-section:not([hidden]) { z-index: 2000 !important; }
+body.edit-editor-open::after { z-index: 1999; pointer-events: none; }
+
+/* The Edit dialog remains fully visible; its shadow separates it from the page. */
+body.edit-editor-open::after { display: none !important; }
+
+/* Match Add Image dialog behavior: Edit form scrolls inside its own popup. */
+.edit-section:not([hidden]) { height: calc(100vh - 48px); max-height: calc(100vh - 48px) !important; box-sizing: border-box; overflow-y: auto !important; overscroll-behavior: contain; -webkit-overflow-scrolling: touch; }
+
+.admin-product-search { margin: 18px 0; }
+.admin-product-search label { display: block; margin-bottom: 6px; font-weight: 700; }
+.admin-product-search input { width: 100%; box-sizing: border-box; padding: 12px 14px; border: 1px solid #cbd5e1; border-radius: 9px; font: inherit; }

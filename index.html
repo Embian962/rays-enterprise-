@@ -34,7 +34,7 @@
     }
     </script>
 
-    <link rel="stylesheet" href="style.css">
+    <link rel="stylesheet" href="style.css?v=20260909-1">
 </head>
 
 <body>
@@ -104,7 +104,7 @@
         My List (<span id="my-list-count">0</span>)
     </a>
 
-    <a href="#checkout">
+    <a href="#checkout" onclick="showCheckout(event)">
         Checkout
     </a>
 
@@ -232,14 +232,13 @@
                 onclick="filterProducts('carpets')"
             >
                 Carpets
-            </button>
-
-            <button
-                type="button"
-                onclick="filterProducts('home-essentials')"
-            >
-                Home Essentials
-            </button>
+            </button>            <button type="button" onclick="filterProducts('home-essentials')">Home Essentials</button>
+            <button type="button" onclick="filterProducts('bathroom')">Bathroom</button>
+            <button type="button" onclick="filterProducts('furniture')">Furniture</button>
+            <button type="button" onclick="filterProducts('storage-and-organization')">Storage &amp; Organization</button>
+            <button type="button" onclick="filterProducts('cleaning-supplies')">Cleaning Supplies</button>
+            <button type="button" onclick="filterProducts('home-decor')">Home Decor</button>
+            <button type="button" onclick="filterProducts('appliances')">Appliances</button>
 
         </div>
 
@@ -837,11 +836,14 @@
 
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script src="api-config.js?v=20260901-2"></script>
-<script src="script.js?v=20260901-9"></script>
+<script src="script.js?v=20260909-1"></script>
 
 </body>
 
 </html>
+
+
+
 
 
 

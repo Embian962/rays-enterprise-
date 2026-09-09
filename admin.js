@@ -44,10 +44,10 @@ async function adminRequest(path, options = {}) {
 
 async function loadAdminProducts() {
     const apiUrl = getApiUrl();
-    if (!apiUrl) return;
+    // Use the Vercel /api proxy on the live site; use Render directly only for local development.
 
     try {
-        const response = await fetch(apiUrl + "/api/products");
+        const response = await fetch((apiUrl || "") + "/api/products?v=" + Date.now());
         if (!response.ok) throw new Error("Could not load products.");
         products = await response.json();
         displayAdminProducts();
@@ -287,7 +287,19 @@ function displayAdminProducts() {
     }
 
 
-    productList.innerHTML = "";
+    if (!document.getElementById("admin-product-search")) {
+        const searchWrap = document.createElement("div");
+        searchWrap.className = "admin-product-search";
+        searchWrap.innerHTML = '<label for="admin-product-search">Search products</label><input type="search" id="admin-product-search" placeholder="Search by name, category, or ID" autocomplete="off">';
+        productList.parentElement?.insertBefore(searchWrap, productList);
+        searchWrap.querySelector("input")?.addEventListener("input", displayAdminProducts);
+    }    productList.innerHTML = "";
+    const search = (document.getElementById("admin-product-search")?.value || "").toLowerCase().trim();
+    const visibleProducts = products.filter(function(product) {
+        return !search || [product.name, product.category, product.id].some(function(value) {
+            return String(value || "").toLowerCase().includes(search);
+        });
+    });
 
 
     if (products.length === 0) {
@@ -299,7 +311,16 @@ function displayAdminProducts() {
     }
 
 
-    products.forEach(function(product, index) {
+    if (visibleProducts.length === 0) { productList.innerHTML = "<p>No matching products found.</p>"; return; }
+
+    visibleProducts.sort(function(a, b) {
+        const aHasImage = !!String(a.image_url || a.image || "").trim();
+        const bHasImage = !!String(b.image_url || b.image || "").trim();
+        return Number(bHasImage) - Number(aHasImage);
+    });
+
+    visibleProducts.forEach(function(product) {
+        const index = products.indexOf(product);
 
         const productItem =
             document.createElement("div");
@@ -316,7 +337,7 @@ function displayAdminProducts() {
         productItem.innerHTML = `
 
             <img
-                src="${product.image}"
+                src="${product.image_url || product.image || "rays-enterprise-catalog-logo.jpg"}"
                 alt="${product.name}"
                 style="
                     width: 150px;
@@ -355,6 +376,8 @@ function displayAdminProducts() {
             >
                 Edit
             </button>
+
+            <button onclick="addProductImage(${index})">Add Image</button>
 
             <button
                 onclick="deleteProduct(${index})"
@@ -471,16 +494,21 @@ function editProduct(index) {
     ).value = "";
 
 
-    document.getElementById(
-        "edit-section"
-    ).style.display = "block";
-
-
-    document.getElementById(
-        "edit-section"
-    ).scrollIntoView({
-        behavior: "smooth"
-    });
+    const editSection = document.getElementById("edit-section");
+    editSection.style.display = "block";
+    editSection.hidden = false;
+    editSection.style.position = "fixed";
+    editSection.style.top = "24px";
+    editSection.style.left = "50%";
+    editSection.style.transform = "translateX(-50%)";
+    editSection.style.width = "min(92vw, 680px)";
+    editSection.style.height = "calc(100vh - 48px)";
+    editSection.style.maxHeight = "calc(100vh - 48px)";
+    editSection.style.overflowY = "scroll";
+    editSection.style.zIndex = "2000";
+    document.body.classList.remove("image-editor-open");
+    document.body.classList.add("edit-editor-open");
+    document.getElementById("editProductName")?.focus();
 
 }
 
@@ -632,9 +660,7 @@ async function saveEditedProduct(index) {
     ).reset();
 
 
-    document.getElementById(
-        "edit-section"
-    ).style.display = "none";
+    document.getElementById("edit-section").hidden = true;
 
 
     alert(
@@ -649,12 +675,12 @@ async function saveEditedProduct(index) {
 // ==========================================
 
 function cancelEdit() {
-
-    document.getElementById(
-        "edit-section"
-    ).style.display = "none";
-
+    const section = document.getElementById("edit-section");
+    if (section) { section.hidden = true; section.style.display = "none"; }
+    document.body.classList.remove("edit-editor-open", "image-editor-open");
+    document.body.style.overflow = "";
 }
+window.cancelEdit = cancelEdit;
 
 
 // ==========================================
@@ -2306,3 +2332,52 @@ updateDashboard = function() {
     syncSalesBalanceVisibility();
 };
 syncSalesBalanceVisibility();
+
+
+function addProductImage(index) {
+    const product = products[index];
+    if (!product) return;
+    document.getElementById("imageProductIndex").value = index;
+    document.getElementById("image-product-name").textContent = "Adding image for: " + product.name;
+    document.getElementById("image-section").hidden = false;
+    document.body.classList.remove("edit-editor-open");
+    document.body.classList.add("image-editor-open");
+    document.getElementById("imageFile")?.focus();
+}
+
+const imageForm = document.getElementById("imageForm");
+if (imageForm) imageForm.addEventListener("submit", function(event) {
+    event.preventDefault();
+    const index = Number(document.getElementById("imageProductIndex").value);
+    const product = products[index];
+    const file = document.getElementById("imageFile").files[0];
+    if (!product || !file) return;
+    if (file.size > MAX_PRODUCT_IMAGE_BYTES) { alert("Please choose an image smaller than 15 MB."); return; }
+    const reader = new FileReader();
+    reader.onload = async function(e) {
+        try {
+            const response = await adminRequest("/api/products/" + product.id, { method: "PUT", body: JSON.stringify({ ...product, image: e.target.result }) });
+            if (!response) return;
+            products[index] = await response.json();
+            displayAdminProducts();
+            document.getElementById("imageForm").reset();
+            document.getElementById("image-section").hidden = true;
+            document.body.classList.remove("image-editor-open");
+        } catch (error) { alert(error.message); }
+    };
+    reader.readAsDataURL(file);
+});
+
+document.getElementById("cancelImageButton")?.addEventListener("click", function() {
+    document.getElementById("imageForm").reset();
+    document.getElementById("image-section").hidden = true;
+    document.body.classList.remove("image-editor-open", "edit-editor-open");
+    document.getElementById("imageFile")?.blur();
+});
+
+const adminProductSearch = document.getElementById("admin-product-search");
+if (adminProductSearch) adminProductSearch.addEventListener("input", displayAdminProducts);
+
+
+
+
