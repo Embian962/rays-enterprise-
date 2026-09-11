@@ -430,7 +430,7 @@ function displayMyList() {
         item.className = "my-list-item";
         item.innerHTML = `
             <img src="${(product.image_url || product.image) || "rays-enterprise-catalog-logo.jpg"}" alt="${product.name}"
-                    loading="${productIndex < 8 ? "eager" : "lazy"}"
+                    loading="lazy"
                     decoding="async"
                 >
             <div>
@@ -1169,7 +1169,7 @@ async function loadProducts() {
                 <img
                     src="${(product.image_url || product.image) || "rays-enterprise-catalog-logo.jpg"}"
                     alt="${product.name}"
-                    loading="${productIndex < 8 ? "eager" : "lazy"}"
+                    loading="lazy"
                     decoding="async"
                 >
 
@@ -2602,6 +2602,7 @@ document.addEventListener("click", function(event) {
     panel.addEventListener("click", function(event) { if (event.target.closest("button")) close(); });
     document.addEventListener("keydown", function(event) { if (event.key === "Escape") close(); });
 })();
+
 
 
 

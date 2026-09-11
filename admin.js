@@ -193,80 +193,56 @@ productForm.addEventListener("submit", function(event) {
                 return color !== "";
             });
 
-    const imageFile =
-        document.getElementById("productImage").files[0];
+    const imageFile = document.getElementById("productImage").files[0];
 
-
-    if (!imageFile) {
-
-        alert("Please choose a product image.");
-
+    if (imageFile && imageFile.size > MAX_PRODUCT_IMAGE_BYTES) {
+        alert("Please choose an image smaller than 15 MB.");
         return;
     }
 
-    if (imageFile.size > MAX_PRODUCT_IMAGE_BYTES) {
-
-        alert("Please choose a product image smaller than 15 MB.");
-
-        return;
-    }
-
-
-    const reader = new FileReader();
-
-
-    reader.onload = async function(event) {
-
+    const saveProduct = async function(imageData) {
         const product = {
-
             name: name,
             price: price,
             stock: stock,
             category: category,
             colors: colors,
-            image: event.target.result
-
+            image: imageData || ""
         };
-
 
         try {
             const response = await adminRequest("/api/products", {
                 method: "POST",
                 body: JSON.stringify(product)
             });
-
             if (!response) return;
-
             products.unshift(await response.json());
         } catch (error) {
-            // If the API is unreachable or returns an error, fall back to
-            // storing products locally so the admin UI remains usable.
             console.warn("API product save failed, falling back to localStorage:", error);
             products.unshift(product);
             try {
                 localStorage.setItem("products", JSON.stringify(products));
-            } catch (e) {
-                console.error("Could not save product to localStorage.", e);
+            } catch (storageError) {
+                console.error("Could not save product to localStorage.", storageError);
                 alert(error.message);
                 return;
             }
             alert("Product saved locally (API unavailable). It will not be shared to the storefront.");
         }
 
-
-        alert("Product added successfully!");
-
-
+        alert(imageData ? "Product added successfully!" : "Product added successfully without an image. You can add the image later.");
         productForm.reset();
-
-
         displayAdminProducts();
-
         updateDashboard();
-
     };
 
+    if (!imageFile) {
+        saveProduct("");
+        return;
+    }
 
+    const reader = new FileReader();
+    reader.onload = function(event) { saveProduct(event.target.result); };
     reader.readAsDataURL(imageFile);
 
 });
@@ -2377,6 +2353,7 @@ document.getElementById("cancelImageButton")?.addEventListener("click", function
 
 const adminProductSearch = document.getElementById("admin-product-search");
 if (adminProductSearch) adminProductSearch.addEventListener("input", displayAdminProducts);
+
 
 
 
