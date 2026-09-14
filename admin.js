@@ -307,7 +307,8 @@ function displayAdminProducts() {
     visibleProducts.forEach(function(product) {
         const productKey = String(product.id || "");
         if (productKey && seenProductIds.has(productKey)) return;
-        if (productKey) seenProductIds.add(productKey);        const index = products.indexOf(product);
+        if (productKey) seenProductIds.add(productKey);
+        const index = products.indexOf(product);
 
         const productItem =
             document.createElement("div");
@@ -2364,6 +2365,7 @@ document.getElementById("cancelImageButton")?.addEventListener("click", function
 
 const adminProductSearch = document.getElementById("admin-product-search");
 if (adminProductSearch) adminProductSearch.addEventListener("input", displayAdminProducts);
+
 
 
 
