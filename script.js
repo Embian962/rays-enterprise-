@@ -362,33 +362,31 @@ function showMyList(event) {
 }
 
 
-function addToMyList(productName) {
+function updateMyListCount() {
+    myList = Array.from(new Set((Array.isArray(myList) ? myList : []).filter(Boolean)));
+    const count = document.getElementById("my-list-count");
+    if (count) count.textContent = String(myList.length);
+}
 
+function addToMyList(productName) {
+    updateMyListCount();
     if (myList.includes(productName)) {
         alert(productName + " is already in My List.");
         return;
     }
-
     myList.push(productName);
     saveMyList();
+    updateMyListCount();
     displayMyList();
     alert(productName + " was saved to My List.");
-
 }
-
 
 function removeFromMyList(productName) {
-
-    myList = myList.filter(function(item) {
-        return item !== productName;
-    });
-
+    myList = myList.filter(function(item) { return item !== productName; });
     saveMyList();
+    updateMyListCount();
     displayMyList();
-
 }
-
-
 function displayMyList() {
 
     const items = document.getElementById("my-list-items");
@@ -414,7 +412,10 @@ function displayMyList() {
         return;
     }
 
-    const products = getProducts();
+    const products = getProducts();    const validNames = new Set(products.map(function(product) { return product.name; }));
+    const cleanedList = myList.filter(function(productName) { return validNames.has(productName); });
+    if (cleanedList.length !== myList.length) { myList = cleanedList; saveMyList(); }
+    updateMyListCount();
 
     myList.forEach(function(productName) {
 
@@ -2602,6 +2603,10 @@ document.addEventListener("click", function(event) {
     panel.addEventListener("click", function(event) { if (event.target.closest("button")) close(); });
     document.addEventListener("keydown", function(event) { if (event.key === "Escape") close(); });
 })();
+
+
+
+
 
 
 
