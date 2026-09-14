@@ -166,6 +166,10 @@ const MAX_PRODUCT_IMAGE_BYTES = 15 * 1024 * 1024;
 productForm.addEventListener("submit", function(event) {
 
     event.preventDefault();
+    if (productForm.dataset.submitting === "true") return;
+    productForm.dataset.submitting = "true";
+    const submitButton = productForm.querySelector("button[type=\"submit\"]");
+    if (submitButton) { submitButton.disabled = true; submitButton.textContent = "Adding…"; }
 
     const name =
         document.getElementById("productName").value.trim();
@@ -195,8 +199,10 @@ productForm.addEventListener("submit", function(event) {
 
     const imageFile = document.getElementById("productImage").files[0];
 
-    if (imageFile && imageFile.size > MAX_PRODUCT_IMAGE_BYTES) {
+        if (imageFile && imageFile.size > MAX_PRODUCT_IMAGE_BYTES) {
         alert("Please choose an image smaller than 15 MB.");
+        productForm.dataset.submitting = "false";
+        if (submitButton) { submitButton.disabled = false; submitButton.textContent = "Add Product"; }
         return;
     }
 
@@ -234,6 +240,8 @@ productForm.addEventListener("submit", function(event) {
         productForm.reset();
         displayAdminProducts();
         updateDashboard();
+        productForm.dataset.submitting = "false";
+        if (submitButton) { submitButton.disabled = false; submitButton.textContent = "Add Product"; }
     };
 
     if (!imageFile) {
@@ -270,6 +278,7 @@ function displayAdminProducts() {
         productList.parentElement?.insertBefore(searchWrap, productList);
         searchWrap.querySelector("input")?.addEventListener("input", displayAdminProducts);
     }    productList.innerHTML = "";
+    const seenProductIds = new Set();
     const search = (document.getElementById("admin-product-search")?.value || "").toLowerCase().trim();
     const visibleProducts = products.filter(function(product) {
         return !search || [product.name, product.category, product.id].some(function(value) {
@@ -296,7 +305,9 @@ function displayAdminProducts() {
     });
 
     visibleProducts.forEach(function(product) {
-        const index = products.indexOf(product);
+        const productKey = String(product.id || "");
+        if (productKey && seenProductIds.has(productKey)) return;
+        if (productKey) seenProductIds.add(productKey);        const index = products.indexOf(product);
 
         const productItem =
             document.createElement("div");
@@ -2353,6 +2364,13 @@ document.getElementById("cancelImageButton")?.addEventListener("click", function
 
 const adminProductSearch = document.getElementById("admin-product-search");
 if (adminProductSearch) adminProductSearch.addEventListener("input", displayAdminProducts);
+
+
+
+
+
+
+
 
 
 
