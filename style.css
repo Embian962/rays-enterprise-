@@ -2299,3 +2299,13 @@ body.trust-panel-open::after { pointer-events: auto; }
   nav > a, nav > button, nav .account-menu-wrap { font-size: 13px; }
   nav .theme-toggle { font-size: 12px; padding: 7px 10px; }
 }
+
+/* Multi-image product gallery */
+.product-gallery { position: relative; }
+.product-gallery-main { width: 100%; height: 100%; object-fit: cover; }
+.gallery-nav { position: absolute; top: 50%; transform: translateY(-50%); width: 34px; height: 34px; border: 0; border-radius: 50%; background: rgba(255,255,255,.9); color: #0b4f4a; font-size: 26px; line-height: 1; cursor: pointer; z-index: 2; box-shadow: 0 2px 8px rgba(0,0,0,.18); }
+.gallery-prev { left: 8px; }
+.gallery-next { right: 8px; }
+.gallery-dots { position: absolute; left: 0; right: 0; bottom: 8px; display: flex; justify-content: center; gap: 5px; z-index: 2; }
+.gallery-dot { width: 8px; height: 8px; padding: 0; border: 1px solid #fff; border-radius: 50%; background: rgba(255,255,255,.65); cursor: pointer; }
+.gallery-dot.is-active { background: #0b4f4a; transform: scale(1.2); }

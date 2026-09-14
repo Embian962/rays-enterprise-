@@ -161,102 +161,53 @@ if (cancelProductFormButton && addProductSection && productForm) {
 
 // The API accepts up to 25 MB of JSON. A base64 data URL is about 33% larger
 // than the source image, so cap the selected image before trying to upload it.
-const MAX_PRODUCT_IMAGE_BYTES = 15 * 1024 * 1024;
+const MAX_PRODUCT_IMAGE_BYTES = 5 * 1024 * 1024;
+const MAX_PRODUCT_IMAGE_COUNT = 8;
+const MAX_PRODUCT_IMAGE_TOTAL_BYTES = 20 * 1024 * 1024;
+function getProductImages(product) {
+    const images = Array.isArray(product && product.images) ? product.images : [];
+    const legacy = product && (product.image_url || product.image);
+    return [...new Set([...images, legacy].filter(value => typeof value === "string" && value.trim()))];
+}
+function validateImageFiles(files) {
+    if (files.length > MAX_PRODUCT_IMAGE_COUNT) { alert("Please choose no more than " + MAX_PRODUCT_IMAGE_COUNT + " images."); return false; }
+    if (files.some(file => file.size > MAX_PRODUCT_IMAGE_BYTES)) { alert("Each image must be smaller than 5 MB."); return false; }
+    if (files.reduce((sum, file) => sum + file.size, 0) > MAX_PRODUCT_IMAGE_TOTAL_BYTES) { alert("The selected images must total less than 20 MB."); return false; }
+    return true;
+}
+function readImageFiles(files) {
+    return Promise.all(files.map(file => new Promise((resolve, reject) => {
+        const reader = new FileReader();
+        reader.onload = event => resolve(event.target.result);
+        reader.onerror = reject;
+        reader.readAsDataURL(file);
+    })));
+}
 
-productForm.addEventListener("submit", function(event) {
-
+productForm.addEventListener("submit", async function(event) {
     event.preventDefault();
     if (productForm.dataset.submitting === "true") return;
     productForm.dataset.submitting = "true";
     const submitButton = productForm.querySelector("button[type=\"submit\"]");
     if (submitButton) { submitButton.disabled = true; submitButton.textContent = "Adding…"; }
-
-    const name =
-        document.getElementById("productName").value.trim();
-
-    const price =
-        Number(
-            document.getElementById("productPrice").value
-        );
-
-    const stock =
-        Number(
-            document.getElementById("productStock").value
-        );
-
-    const category =
-        document.getElementById("productCategory").value;
-
-    const colors =
-        document.getElementById("productColors").value
-            .split(",")
-            .map(function(color) {
-                return color.trim();
-            })
-            .filter(function(color) {
-                return color !== "";
-            });
-
-    const imageFile = document.getElementById("productImage").files[0];
-
-        if (imageFile && imageFile.size > MAX_PRODUCT_IMAGE_BYTES) {
-        alert("Please choose an image smaller than 15 MB.");
-        productForm.dataset.submitting = "false";
-        if (submitButton) { submitButton.disabled = false; submitButton.textContent = "Add Product"; }
-        return;
-    }
-
-    const saveProduct = async function(imageData) {
-        const product = {
-            name: name,
-            price: price,
-            stock: stock,
-            category: category,
-            colors: colors,
-            image: imageData || ""
-        };
-
-        try {
-            const response = await adminRequest("/api/products", {
-                method: "POST",
-                body: JSON.stringify(product)
-            });
-            if (!response) return;
-            products.unshift(await response.json());
-        } catch (error) {
-            console.warn("API product save failed, falling back to localStorage:", error);
-            products.unshift(product);
-            try {
-                localStorage.setItem("products", JSON.stringify(products));
-            } catch (storageError) {
-                console.error("Could not save product to localStorage.", storageError);
-                alert(error.message);
-                return;
-            }
-            alert("Product saved locally (API unavailable). It will not be shared to the storefront.");
-        }
-
-        alert(imageData ? "Product added successfully!" : "Product added successfully without an image. You can add the image later.");
-        productForm.reset();
-        displayAdminProducts();
-        updateDashboard();
-        productForm.dataset.submitting = "false";
-        if (submitButton) { submitButton.disabled = false; submitButton.textContent = "Add Product"; }
-    };
-
-    if (!imageFile) {
-        saveProduct("");
-        return;
-    }
-
-    const reader = new FileReader();
-    reader.onload = function(event) { saveProduct(event.target.result); };
-    reader.readAsDataURL(imageFile);
-
+    const name = document.getElementById("productName").value.trim();
+    const price = Number(document.getElementById("productPrice").value);
+    const stock = Number(document.getElementById("productStock").value);
+    const category = document.getElementById("productCategory").value;
+    const colors = document.getElementById("productColors").value.split(",").map(color => color.trim()).filter(Boolean);
+    const files = Array.from(document.getElementById("productImage").files || []);
+    if (!validateImageFiles(files)) { productForm.dataset.submitting = "false"; if (submitButton) { submitButton.disabled = false; submitButton.textContent = "Add Product"; } return; }
+    try {
+        const images = await readImageFiles(files);
+        const product = { name, price, stock, category, colors, image: images[0] || "", images };
+        const response = await adminRequest("/api/products", { method: "POST", body: JSON.stringify(product) });
+        if (!response) return;
+        products.unshift(await response.json());
+        alert(images.length ? "Product added successfully!" : "Product added successfully without an image. You can add images later.");
+        productForm.reset(); displayAdminProducts(); updateDashboard();
+    } catch (error) { console.warn("API product save failed:", error); alert(error.message); }
+    finally { productForm.dataset.submitting = "false"; if (submitButton) { submitButton.disabled = false; submitButton.textContent = "Add Product"; } }
 });
-
-
-// ==========================================
 // DISPLAY PRODUCTS
 // ==========================================
 
@@ -574,36 +525,16 @@ editProductForm.addEventListener(
                 });
 
 
-        const imageFile =
-            document.getElementById(
-                "editProductImage"
-            ).files[0];
-
-
-        if (imageFile) {
-
-            const reader =
-                new FileReader();
-
-
-            reader.onload =
-                function(event) {
-
-                    product.image =
-                        event.target.result;
-
-
-                    saveEditedProduct(index);
-
-                };
-
-
-            reader.readAsDataURL(imageFile);
-
+        const imageFiles = Array.from(document.getElementById("editProductImage").files || []);
+        if (!validateImageFiles(imageFiles)) return;
+        if (imageFiles.length) {
+            readImageFiles(imageFiles).then(function(images) {
+                product.images = images;
+                product.image = images[0] || "";
+                saveEditedProduct(index);
+            }).catch(function() { alert("Could not read the selected images."); });
         } else {
-
             saveEditedProduct(index);
-
         }
 
     }
@@ -2334,28 +2265,24 @@ function addProductImage(index) {
 }
 
 const imageForm = document.getElementById("imageForm");
-if (imageForm) imageForm.addEventListener("submit", function(event) {
+if (imageForm) imageForm.addEventListener("submit", async function(event) {
     event.preventDefault();
     const index = Number(document.getElementById("imageProductIndex").value);
     const product = products[index];
-    const file = document.getElementById("imageFile").files[0];
-    if (!product || !file) return;
-    if (file.size > MAX_PRODUCT_IMAGE_BYTES) { alert("Please choose an image smaller than 15 MB."); return; }
-    const reader = new FileReader();
-    reader.onload = async function(e) {
-        try {
-            const response = await adminRequest("/api/products/" + product.id, { method: "PUT", body: JSON.stringify({ ...product, image: e.target.result }) });
-            if (!response) return;
-            products[index] = await response.json();
-            displayAdminProducts();
-            document.getElementById("imageForm").reset();
-            document.getElementById("image-section").hidden = true;
-            document.body.classList.remove("image-editor-open");
-        } catch (error) { alert(error.message); }
-    };
-    reader.readAsDataURL(file);
+    const files = Array.from(document.getElementById("imageFile").files || []);
+    if (!product || !files.length || !validateImageFiles(files)) return;
+    try {
+        const newImages = await readImageFiles(files);
+        const images = [...new Set([...getProductImages(product), ...newImages])];
+        const response = await adminRequest("/api/products/" + product.id, { method: "PUT", body: JSON.stringify({ ...product, image: images[0] || "", images }) });
+        if (!response) return;
+        products[index] = await response.json();
+        displayAdminProducts();
+        imageForm.reset();
+        document.getElementById("image-section").hidden = true;
+        document.body.classList.remove("image-editor-open");
+    } catch (error) { alert(error.message); }
 });
-
 document.getElementById("cancelImageButton")?.addEventListener("click", function() {
     document.getElementById("imageForm").reset();
     document.getElementById("image-section").hidden = true;
@@ -2365,6 +2292,10 @@ document.getElementById("cancelImageButton")?.addEventListener("click", function
 
 const adminProductSearch = document.getElementById("admin-product-search");
 if (adminProductSearch) adminProductSearch.addEventListener("input", displayAdminProducts);
+
+
+
+
 
 
 

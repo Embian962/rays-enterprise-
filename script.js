@@ -1040,6 +1040,11 @@ document.addEventListener("keydown", function(event) {
     const lightbox = document.getElementById("product-lightbox");
     if (event.key === "Escape" && lightbox) lightbox.classList.remove("is-open");
 });
+function getProductImages(product) {
+    const images = Array.isArray(product && product.images) ? product.images : [];
+    const legacy = product && (product.image_url || product.image);
+    return [...new Set([...images, legacy].filter(value => typeof value === "string" && value.trim()))];
+}
 async function loadProducts() {
 
     const catalogContainer = document.getElementById("product-container");
@@ -1130,8 +1135,8 @@ async function loadProducts() {
 
 
     products.sort(function(a, b) {
-        const aHasImage = !!String(a.image_url || a.image || "").trim();
-        const bHasImage = !!String(b.image_url || b.image || "").trim();
+        const aHasImage = getProductImages(a).length > 0;
+        const bHasImage = getProductImages(b).length > 0;
         return Number(bHasImage) - Number(aHasImage);
     });
 
@@ -1165,15 +1170,14 @@ async function loadProducts() {
 
         productCard.innerHTML = `
 
-            <div class="product-image-container">
-
-                <img
-                    src="${(product.image_url || product.image) || "rays-enterprise-catalog-logo.jpg"}"
-                    alt="${product.name}"
-                    loading="lazy"
-                    decoding="async"
-                >
-
+            <div class="product-image-container product-gallery">
+                <img class="product-gallery-main" src="${getProductImages(product)[0] || "rays-enterprise-catalog-logo.jpg"}" alt="${product.name}" loading="lazy" decoding="async">
+                ${getProductImages(product).length > 1 ? `
+                    <button type="button" class="gallery-nav gallery-prev" aria-label="Previous image">‹</button>
+                    <button type="button" class="gallery-nav gallery-next" aria-label="Next image">›</button>
+                    <div class="gallery-dots" aria-label="Product images">
+                        ${getProductImages(product).map(function(_, index) { return `<button type="button" class="gallery-dot${index === 0 ? " is-active" : ""}" aria-label="Show image ${index + 1}"></button>`; }).join("")}
+                    </div>` : ""}
             </div>
 
 
@@ -1232,18 +1236,24 @@ async function loadProducts() {
         `;
 
 
-        const productImage = productCard.querySelector(".product-image-container img");
+        const galleryImages = getProductImages(product);
+        const productImage = productCard.querySelector(".product-gallery-main");
+        let galleryIndex = 0;
+        const updateGallery = function(index) {
+            if (!productImage || !galleryImages.length) return;
+            galleryIndex = (index + galleryImages.length) % galleryImages.length;
+            productImage.src = galleryImages[galleryIndex];
+            productImage.alt = product.name + " image " + (galleryIndex + 1);
+            productCard.querySelectorAll(".gallery-dot").forEach(function(dot, dotIndex) { dot.classList.toggle("is-active", dotIndex === galleryIndex); });
+        };
         if (productImage) {
-            productImage.tabIndex = 0;
-            productImage.setAttribute("role", "button");
-            productImage.addEventListener("click", function() {
-                openProductImage((product.image_url || product.image) || "rays-enterprise-catalog-logo.jpg", product.name);
-            });
-            productImage.addEventListener("keydown", function(event) {
-                if (event.key === "Enter" || event.key === " ") openProductImage((product.image_url || product.image) || "rays-enterprise-catalog-logo.jpg", product.name);
-            });
+            productImage.tabIndex = 0; productImage.setAttribute("role", "button");
+            productImage.addEventListener("click", function() { openProductImage(galleryImages[galleryIndex] || "rays-enterprise-catalog-logo.jpg", product.name); });
+            productImage.addEventListener("keydown", function(event) { if (event.key === "Enter" || event.key === " ") openProductImage(galleryImages[galleryIndex] || "rays-enterprise-catalog-logo.jpg", product.name); });
         }
-        const addButton =
+        productCard.querySelector(".gallery-prev")?.addEventListener("click", function(event) { event.stopPropagation(); updateGallery(galleryIndex - 1); });
+        productCard.querySelector(".gallery-next")?.addEventListener("click", function(event) { event.stopPropagation(); updateGallery(galleryIndex + 1); });
+        productCard.querySelectorAll(".gallery-dot").forEach(function(dot, dotIndex) { dot.addEventListener("click", function(event) { event.stopPropagation(); updateGallery(dotIndex); }); });        const addButton =
             productCard.querySelector(
                 ".add-to-cart-button"
             );
@@ -2603,6 +2613,7 @@ document.addEventListener("click", function(event) {
     panel.addEventListener("click", function(event) { if (event.target.closest("button")) close(); });
     document.addEventListener("keydown", function(event) { if (event.key === "Escape") close(); });
 })();
+
 
 
 

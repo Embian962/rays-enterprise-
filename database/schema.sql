@@ -6,6 +6,7 @@ CREATE TABLE products (
   category TEXT NOT NULL,
   colors JSONB NOT NULL DEFAULT '[]'::jsonb,
   image TEXT,
+  images JSONB NOT NULL DEFAULT '[]'::jsonb,
   featured BOOLEAN NOT NULL DEFAULT FALSE,
   sale_price NUMERIC(12, 2),
   created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
@@ -50,3 +51,4 @@ CREATE SEQUENCE customer_order_number_seq START WITH 1;
 ALTER TABLE orders ADD COLUMN order_number BIGINT;
 CREATE UNIQUE INDEX orders_order_number_unique ON orders (order_number) WHERE order_number IS NOT NULL;
 CREATE INDEX reviews_created_at_index ON reviews (created_at DESC);
+

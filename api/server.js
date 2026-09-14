@@ -31,6 +31,7 @@ const ensureProductSchema = async () => {
       category TEXT NOT NULL,
       colors JSONB NOT NULL DEFAULT '[]'::jsonb,
       image TEXT,
+      images JSONB NOT NULL DEFAULT '[]'::jsonb,
       featured BOOLEAN NOT NULL DEFAULT FALSE,
       sale_price NUMERIC(12, 2),
       created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
@@ -42,6 +43,7 @@ const ensureProductSchema = async () => {
       ADD COLUMN IF NOT EXISTS stock INTEGER NOT NULL DEFAULT 0 CHECK (stock >= 0),
       ADD COLUMN IF NOT EXISTS colors JSONB NOT NULL DEFAULT '[]'::jsonb,
       ADD COLUMN IF NOT EXISTS image TEXT,
+      ADD COLUMN IF NOT EXISTS images JSONB NOT NULL DEFAULT '[]'::jsonb,
       ADD COLUMN IF NOT EXISTS featured BOOLEAN NOT NULL DEFAULT FALSE,
       ADD COLUMN IF NOT EXISTS sale_price NUMERIC(12, 2),
       ADD COLUMN IF NOT EXISTS created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
@@ -257,28 +259,38 @@ app.post("/api/admin/login", (req, res) => {
   res.json({ token: createAdminToken(), expiresIn: 60 * 60 * 8 });
 });
 
+const normalizeProductImages = (images, image, imageUrl) => {
+  const existing = Array.isArray(images) ? images : [];
+  const legacy = imageUrl || image;
+  return [...new Set([...existing, legacy].filter(value => typeof value === "string" && value.trim()))];
+};
+
 app.get("/api/products", asyncRoute(async (_req, res) => {
   const { rows } = await pool.query("SELECT * FROM products ORDER BY created_at DESC");
-  res.json(rows);
+  res.json(rows.map(product => ({ ...product, images: normalizeProductImages(product.images, product.image, product.image_url) })));
 }));
 
 app.post("/api/products", isAdmin, asyncRoute(async (req, res) => {
-  const { name, price, stock, category, colors = [], image, featured = false, salePrice = null } = req.body;
+  const { name, price, stock, category, colors = [], image, images = [], featured = false, salePrice = null } = req.body;
+  const productImages = normalizeProductImages(images, image);
+  const primaryImage = image || productImages[0] || "";
   const { rows } = await pool.query(
-    "INSERT INTO products (name, price, stock, category, colors, image, featured, sale_price) VALUES ($1,$2,$3,$4,$5,$6,$7,$8) RETURNING *",
-    [name, price, stock, category, JSON.stringify(colors), image, featured, salePrice]
+    "INSERT INTO products (name, price, stock, category, colors, image, images, featured, sale_price) VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9) RETURNING *",
+    [name, price, stock, category, JSON.stringify(colors), primaryImage, JSON.stringify(productImages), featured, salePrice]
   );
-  res.status(201).json(rows[0]);
+  res.status(201).json({ ...rows[0], images: normalizeProductImages(rows[0].images, rows[0].image, rows[0].image_url) });
 }));
 
 app.put("/api/products/:id", isAdmin, asyncRoute(async (req, res) => {
-  const { name, price, stock, category, colors = [], image, featured = false, salePrice = null } = req.body;
+  const { name, price, stock, category, colors = [], image, images = [], featured = false, salePrice = null } = req.body;
+  const productImages = normalizeProductImages(images, image);
+  const primaryImage = image || productImages[0] || "";
   const { rows } = await pool.query(
-    "UPDATE products SET name=$1, price=$2, stock=$3, category=$4, colors=$5, image=$6, featured=$7, sale_price=$8, updated_at=NOW() WHERE id=$9 RETURNING *",
-    [name, price, stock, category, JSON.stringify(colors), image, featured, salePrice, req.params.id]
+    "UPDATE products SET name=$1, price=$2, stock=$3, category=$4, colors=$5, image=$6, images=$7, featured=$8, sale_price=$9, updated_at=NOW() WHERE id=$10 RETURNING *",
+    [name, price, stock, category, JSON.stringify(colors), primaryImage, JSON.stringify(productImages), featured, salePrice, req.params.id]
   );
   if (!rows[0]) return res.status(404).json({ error: "Product not found." });
-  res.json(rows[0]);
+  res.json({ ...rows[0], images: normalizeProductImages(rows[0].images, rows[0].image, rows[0].image_url) });
 }));
 
 app.delete("/api/products/:id", isAdmin, asyncRoute(async (req, res) => {
@@ -438,6 +450,8 @@ app.use((error, _req, res, _next) => {
 await ensureProductSchema();
 await ensureSharedDataSchema();
 app.listen(port, () => console.log(`Ray's Enterprise API listening on port ${port}`));
+
+
 
 
 

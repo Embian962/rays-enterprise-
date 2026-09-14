@@ -334,7 +334,7 @@
                 <input
                     type="file"
                     id="productImage"
-                    accept="image/*">
+                    accept="image/*" multiple>
 
 
 
@@ -508,7 +508,7 @@
                     type="file"
                     id="editProductImage"
                     accept="image/*"
-                >
+                 multiple>
 
 
 
@@ -585,7 +585,7 @@
             <form id="imageForm">
                 <input type="hidden" id="imageProductIndex">
                 <label for="imageFile">Product Image (optional)</label>
-                <input type="file" id="imageFile" accept="image/*" required>
+                <input type="file" id="imageFile" accept="image/*" multiple required>
                 <div class="product-form-actions">
                     <button type="submit">Save Image</button>
                     <button type="button" id="cancelImageButton">Cancel</button>
@@ -610,6 +610,9 @@
 </html>
 
 <script src="admin-access.js"></script>
+
+
+
 
 
 
