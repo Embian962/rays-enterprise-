@@ -2354,7 +2354,7 @@ if (adminProductSearch) adminProductSearch.addEventListener("input", displayAdmi
         const term = (search?.value || "").toLowerCase().trim();
         const matches = products.filter(function(product) { return !term || String(product.name || "").toLowerCase().includes(term) || String(product.id || "").includes(term); });
         productList.innerHTML = matches.map(function(product) { return `<button type="button" class="offline-product-option" data-id="${product.id}" data-price="${Number(product.price) || 0}">${product.name} <span>— KSh ${Number(product.price || 0).toLocaleString()}</span></button>`; }).join("") || '<p class="offline-product-empty">No matching products</p>';
-        productList.querySelectorAll(".offline-product-option").forEach(function(option) { option.addEventListener("click", function() { select.value = option.dataset.id; chooseButton.textContent = option.textContent; price.value = option.dataset.price; picker.hidden = true; updateTotal(); }); });
+        productList.querySelectorAll(".offline-product-option").forEach(function(option) { option.addEventListener("click", function() { select.innerHTML = `<option value="${option.dataset.id}">${option.textContent}</option>`; select.value = option.dataset.id; chooseButton.textContent = option.textContent; price.value = option.dataset.price; picker.hidden = true; updateTotal(); }); });
     };
     const updateTotal = function() { total.textContent = (Math.max(0, Number(qty.value) || 0) * Math.max(0, Number(price.value) || 0)).toLocaleString(); };
     open.addEventListener("click", function() { populate(); section.hidden = false; section.scrollIntoView({ behavior: "smooth", block: "start" }); });
@@ -2437,5 +2437,6 @@ if (adminProductSearch) adminProductSearch.addEventListener("input", displayAdmi
     setInterval(render, 5000);
     window.renderInventory = render;
 })();
+
 
 
