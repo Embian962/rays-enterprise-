@@ -820,3 +820,5 @@ body.admin-dark { background: #0f172a; color: #e2e8f0; }
 body.admin-dark header, body.admin-dark .admin-sidebar { background: #020617; }
 body.admin-dark .dashboard, body.admin-dark .admin-section, body.admin-dark .admin-products, body.admin-dark .admin-orders, body.admin-dark .admin-welcome, body.admin-dark .edit-section { background: #1e293b; color: #e2e8f0; }
 body.admin-dark h2, body.admin-dark h3, body.admin-dark label { color: #f8fafc; }
+.admin-welcome img { border-radius: 18px; background: #fff; padding: 10px; box-shadow: 0 12px 30px rgba(15,23,42,.16); }
+.sidebar-brand { display: flex; align-items: center; gap: 9px; }

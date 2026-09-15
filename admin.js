@@ -1965,7 +1965,7 @@ function notifyNewOrders(orders) {
         knownOrderIds.add(id);
         const notification = new Notification("New order " + (order.orderNumber || ("No." + id.padStart(3, "0"))), {
             body: (order.customerName || "A customer") + " placed an order for KSh " + Number(order.total || 0).toLocaleString() + ".",
-            icon: "rays-enterprise-logo.jpg",
+            icon: "rays-enterprise-logo-new.jpg",
             tag: "order-" + id
         });
         notification.onclick = function() { window.focus(); notification.close(); };
@@ -2374,3 +2374,4 @@ if (adminProductSearch) adminProductSearch.addEventListener("input", displayAdmi
     const saved = localStorage.getItem("rays-admin-theme") || "light"; document.body.classList.toggle("admin-dark", saved === "dark"); const radio = document.querySelector(`input[name="adminTheme"][value="${saved}"]`); if (radio) radio.checked = true;
     document.getElementById("saveThemeButton")?.addEventListener("click", function() { const choice = document.querySelector("input[name=adminTheme]:checked")?.value || "light"; localStorage.setItem("rays-admin-theme", choice); document.body.classList.toggle("admin-dark", choice === "dark"); alert("Appearance saved."); });
 })();
+
