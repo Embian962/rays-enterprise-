@@ -2377,6 +2377,8 @@ body.categories-drawer-open .products-section > .categories { display: flex !imp
     nav#customer-sidebar .customer-categories-toggle { color: var(--ink); background: transparent; }
     body.dark-mode nav#customer-sidebar > a:hover, body.dark-mode nav#customer-sidebar > a:focus-visible { background: #244143; }
 }
+/* Keep the customer theme control available inside the mobile sidebar. */
+@media (max-width: 700px) { nav#customer-sidebar .theme-toggle { display: block !important; color: var(--ink); background: transparent; } }
 /* Mobile header spacing: keep brand, menu, cart, and account from colliding */
 @media (max-width: 700px) {
     header { grid-template-columns: 44px minmax(0, 1fr) auto; padding: 10px 8px 10px 50px; column-gap: 8px; }
