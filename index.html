@@ -34,7 +34,7 @@
     }
     </script>
 
-    <link rel="stylesheet" href="style.css?v=20260915-header-fix">
+    <link rel="stylesheet" href="style.css?v=20260915-welcome">
 </head>
 
 <body>
@@ -149,22 +149,17 @@
          WELCOME
     ========================================== -->
 
-    <section class="welcome-section">
-
-        <h2>Welcome to Ray's Enterprise</h2>
-
-        <p>
-            Discover quality products for your home,
-            kitchen and bedroom.
-        </p>
-
-        <button
-            type="button"
-            onclick="showProducts()"
-        >
-            View Products
-        </button>
-
+    <section class="welcome-section" id="customer-welcome">
+        <p class="welcome-eyebrow">WELCOME TO RAY'S ENTERPRISE</p>
+        <h2>Why shop with us?</h2>
+        <p>Quality home essentials, friendly support, and simple ordering from a trusted local store.</p>
+        <div class="welcome-trust-points">
+            <span>🚚 Reliable delivery</span>
+            <span>💬 Real customer support</span>
+            <span>↩ Clear returns guidance</span>
+            <span>📍 Visit our store</span>
+        </div>
+        <p class="welcome-menu-hint">Open the menu to browse products, categories, your cart, and account.</p>
     </section>
 
 
@@ -284,7 +279,7 @@
 <section
     id="cart"
     class="cart-section"
->
+ style="display: none;">
 
     <h2>Shopping Cart</h2>
 
@@ -842,7 +837,7 @@
 
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script src="api-config.js?v=20260901-2"></script>
-<script src="script.js?v=20260915-header-fix"></script>
+<script src="script.js?v=20260915-welcome"></script>
 
 </body>
 

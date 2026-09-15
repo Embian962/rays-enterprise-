@@ -2539,6 +2539,10 @@ populateReviewProducts();
 
 displayCart();
 
+hideAllSections();
+const customerWelcome = document.getElementById("customer-welcome");
+if (customerWelcome) customerWelcome.style.display = "block";
+
 displayMyList();
 
 updatePaymentMethod();

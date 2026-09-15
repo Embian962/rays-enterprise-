@@ -2381,3 +2381,15 @@ body.trust-panel-open::after { pointer-events: auto; }
     .customer-top-actions .customer-auth-button { padding: 6px 7px; font-size: .7rem; }
     .customer-menu-toggle { width: 32px; height: 32px; font-size: 1rem; }
 }
+/* Branded default customer landing */
+.welcome-eyebrow { margin: 0 0 12px; color: #b9e7dc; font-size: .78rem; font-weight: 800; letter-spacing: .14em; }
+.welcome-trust-points { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px 18px; max-width: 620px; margin: 24px 0 18px; }
+.welcome-trust-points span { padding: 11px 13px; border: 1px solid rgba(255,255,255,.22); border-radius: 10px; color: #f0fbf8; background: rgba(0,0,0,.16); }
+.welcome-menu-hint { margin-top: 16px !important; color: #d7eeea !important; font-size: .92rem !important; }
+@media (max-width: 700px) {
+    .welcome-section { display: block; min-height: calc(100vh - 120px); margin: 0; padding: 44px 22px; border-radius: 0; text-align: left; background-position: 68% center; }
+    .welcome-section h2 { max-width: 300px; font-size: 2.15rem; }
+    .welcome-section p { font-size: .96rem; }
+    .welcome-trust-points { grid-template-columns: 1fr; gap: 8px; margin-top: 22px; }
+    .welcome-trust-points span { font-size: .88rem; }
+}
