@@ -789,3 +789,23 @@ body.edit-editor-open::after { display: none !important; }
 .offline-product-option:hover { background: #eef7f6; }
 .offline-product-option span { color: #64748b; }
 .offline-product-empty { padding: 12px; color: #64748b; }
+
+/* Manager dashboard layout */
+.admin-sidebar { position: fixed; left: 0; top: 0; bottom: 0; width: 230px; padding: 28px 16px; background: #0f172a; color: #e2e8f0; z-index: 20; }
+.sidebar-brand { font-weight: 800; font-size: 18px; color: #fff; margin: 8px 12px 30px; }
+.admin-sidebar nav { display: grid; gap: 6px; }
+.admin-sidebar a { color: #cbd5e1; text-decoration: none; padding: 12px 14px; border-radius: 9px; font-size: 14px; font-weight: 600; }
+.admin-sidebar a:hover, .admin-sidebar a:focus { background: #1e293b; color: #fff; }
+body { padding-left: 230px; }
+main { width: min(94%, 1400px); margin: 30px auto; }
+header { margin-left: -230px; padding-left: calc(6% + 230px); }
+.admin-primary-action { margin: 0 0 18px; }
+@media (max-width: 760px) {
+  .admin-sidebar { position: static; width: 100%; padding: 12px; }
+  .sidebar-brand { margin: 4px 8px 10px; }
+  .admin-sidebar nav { display: flex; overflow-x: auto; gap: 4px; }
+  .admin-sidebar a { white-space: nowrap; padding: 9px 10px; }
+  body { padding-left: 0; }
+  header { margin-left: 0; padding-left: 6%; }
+  main { width: 94%; margin: 20px auto; }
+}

@@ -15,7 +15,7 @@
 
     <link
         rel="stylesheet"
-        href="admin.css?v=20260915-product-picker"
+        href="admin.css?v=20260915-admin-redesign"
     >
 
 </head>
@@ -58,14 +58,14 @@
 </section>
 
 
-<main>
+<aside class="admin-sidebar" aria-label="Admin navigation"><div class="sidebar-brand">Rays Enterprise</div><nav><a href="#admin-dashboard">Dashboard</a><a href="#products-panel">Products</a><a href="#offline-sale-section">Offline Sale</a><a href="#orders-panel">Online Orders</a><a href="#sales-summary">Sales Reports</a><a href="#feedback-inbox">Customers & Feedback</a><a href="#admin-settings">Settings</a></nav></aside>\n\n<main>
 
 
         <!-- =========================
              BUSINESS OVERVIEW
         ========================== -->
 
-        <section class="dashboard">
+        <section class="dashboard" id="admin-dashboard">
 
             <h2>
                 Business Overview
@@ -374,7 +374,7 @@
              SAVED PRODUCTS
         ========================== -->
 
-        <section class="admin-products">
+        <section class="admin-products" id="products-panel">
 
             <div class="admin-products-heading">
                 <h2>
@@ -554,7 +554,7 @@
         ========================== -->
 
        <section
-    class="admin-orders"
+    class="admin-orders" id="orders-panel"
     style="display: none;"
 >
 
@@ -628,6 +628,7 @@
 </html>
 
 <script src="admin-access.js"></script>
+
 
 
 
