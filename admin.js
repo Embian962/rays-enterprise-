@@ -2342,6 +2342,9 @@ if (adminProductSearch) adminProductSearch.addEventListener("input", displayAdmi
     chooseButton?.addEventListener("click", function() { populate(); picker.hidden = !picker.hidden; if (!picker.hidden) search?.focus(); });
     document.getElementById("cancelOfflineSaleButton")?.addEventListener("click", function() { form.reset(); section.hidden = true; });
     document.getElementById("closeOfflineSaleTop")?.addEventListener("click", function() { form.reset(); section.hidden = true; });
+    const history = document.getElementById("offlineSaleHistoryList");
+    const loadHistory = async function() { if (!history) return; try { const response = await adminRequest("/api/offline-sales"); if (!response) return; const sales = await response.json(); history.innerHTML = sales.length ? sales.map(function(sale) { return `<article class="offline-sale-history-item"><strong>Sale #${sale.id}</strong><span>${new Date(sale.created_at).toLocaleString()}</span><span>${sale.payment_method} · KSh ${Number(sale.total).toLocaleString()}</span><small>${(sale.items || []).map(function(item) { return `${item.product_name} × ${item.quantity}`; }).join(", ")}</small></article>`; }).join("") : "<p>No offline sales recorded yet.</p>"; } catch (error) { history.innerHTML = "<p>Could not load offline sales.</p>"; } };
+    open.addEventListener("click", loadHistory);
     search?.addEventListener("input", populate);
     select.addEventListener("change", function() { const option = select.options[select.selectedIndex]; price.value = option?.dataset.price || ""; updateTotal(); });
     qty.addEventListener("input", updateTotal); price.addEventListener("input", updateTotal);
@@ -2374,4 +2377,5 @@ if (adminProductSearch) adminProductSearch.addEventListener("input", displayAdmi
     const saved = localStorage.getItem("rays-admin-theme") || "light"; document.body.classList.toggle("admin-dark", saved === "dark"); const radio = document.querySelector(`input[name="adminTheme"][value="${saved}"]`); if (radio) radio.checked = true;
     document.getElementById("saveThemeButton")?.addEventListener("click", function() { const choice = document.querySelector("input[name=adminTheme]:checked")?.value || "light"; localStorage.setItem("rays-admin-theme", choice); document.body.classList.toggle("admin-dark", choice === "dark"); alert("Appearance saved."); });
 })();
+
 
