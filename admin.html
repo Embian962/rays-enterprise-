@@ -15,7 +15,7 @@
 
     <link
         rel="stylesheet"
-        href="admin.css?v=20260915-inventory"
+        href="admin.css?v=20260915-save-fix"
     >
 
 </head>
@@ -226,13 +226,13 @@
             <button type="button" id="closeOfflineSaleTop" class="panel-close-button" aria-label="Close offline sale">×</button>
             <h2>Make New Sale</h2>
             <form id="offlineSaleForm">
-                <label for="chooseProductButton">Product</label><button type="button" id="chooseProductButton" class="choose-product-button">Choose a product</button><div id="offlineProductPicker" class="offline-product-picker" hidden><div id="offlineProductList" class="offline-product-list"></div><label for="offlineSaleSearch">Search products</label><input type="search" id="offlineSaleSearch" placeholder="Search by product name or ID" autocomplete="off"></div><select id="offlineSaleProduct" required hidden></select>
+                <label for="chooseProductButton">Product</label><button type="button" id="chooseProductButton" class="choose-product-button">Choose a product</button><div id="offlineProductPicker" class="offline-product-picker" hidden><div id="offlineProductList" class="offline-product-list"></div><label for="offlineSaleSearch">Search products</label><input type="search" id="offlineSaleSearch" placeholder="Search by product name or ID" autocomplete="off"></div><select id="offlineSaleProduct" hidden></select>
                 <label for="offlineSaleQuantity">Quantity sold</label><input type="number" id="offlineSaleQuantity" min="1" value="1" required>
                 <label for="offlineSalePrice">Selling price per item (KSh)</label><input type="number" id="offlineSalePrice" min="0" step="0.01" required>
                 <label for="offlineSalePayment">Payment method</label><select id="offlineSalePayment"><option>Cash</option><option>M-Pesa</option><option>Card</option><option>Other</option></select>
                 <label for="offlineSaleCustomer">Customer name (optional)</label><input type="text" id="offlineSaleCustomer">
                 <label for="offlineSaleNotes">Notes (optional)</label><textarea id="offlineSaleNotes" rows="2"></textarea>
-                <p><strong>Total: KSh <span id="offlineSaleTotal">0</span></strong></p>
+                <p><strong>Total: KSh <span id="offlineSaleTotal">0</span></strong></p><p id="offlineSaleStatus" class="offline-sale-status" aria-live="polite"></p>
                 <div class="product-form-actions"><button type="submit">Save Offline Sale</button><button type="button" id="cancelOfflineSaleButton">Cancel</button></div>
             </form>
             <div class="offline-sales-history"><h3>Offline Sales History</h3><div id="offlineSaleHistoryList"><p>Open this tab to load saved sales.</p></div></div>
@@ -642,7 +642,7 @@
     ========================== -->
 
     <script src="api-config.js"></script>
-    <script src="admin.js?v=20260915-inventory"></script>
+    <script src="admin.js?v=20260915-save-fix"></script>
 
 
 </body>
@@ -650,6 +650,8 @@
 </html>
 
 <script src="admin-access.js"></script>
+
+
 
 
 

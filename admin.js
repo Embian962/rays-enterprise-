@@ -2347,7 +2347,7 @@ if (adminProductSearch) adminProductSearch.addEventListener("input", displayAdmi
     const search = document.getElementById("offlineSaleSearch");
     const qty = document.getElementById("offlineSaleQuantity");
     const price = document.getElementById("offlineSalePrice");
-    const total = document.getElementById("offlineSaleTotal");
+    const total = document.getElementById("offlineSaleTotal");`n    const status = document.getElementById("offlineSaleStatus");
     if (!open || !section || !form || !select) return;
     const populate = function() {
         const term = (search?.value || "").toLowerCase().trim();
@@ -2368,15 +2368,15 @@ if (adminProductSearch) adminProductSearch.addEventListener("input", displayAdmi
     qty.addEventListener("input", updateTotal); price.addEventListener("input", updateTotal);
     form.addEventListener("submit", async function(event) {
         event.preventDefault();
-        if (!select.value) return alert("Choose a product first.");
+        if (!select.value) { if (status) status.textContent = "Choose a product before saving."; return; }
         const button = form.querySelector("button[type=submit]"); if (button) button.disabled = true;
         try {
             const response = await adminRequest("/api/offline-sales", { method: "POST", body: JSON.stringify({ customerName: document.getElementById("offlineSaleCustomer").value, notes: document.getElementById("offlineSaleNotes").value, paymentMethod: document.getElementById("offlineSalePayment").value, items: [{ productId: Number(select.value), quantity: Number(qty.value), unitPrice: Number(price.value) }] }) });
             if (!response) return;
             const sale = await response.json();
-            alert("Offline sale recorded. Stock updated." + (sale.items?.[0]?.shortage ? " Shortage recorded: " + sale.items[0].shortage : ""));
+            if (status) status.textContent = "Offline sale saved and stock updated." + (sale.items?.[0]?.shortage ? " Shortage recorded: " + sale.items[0].shortage : "");
             form.reset(); section.hidden = true; await loadAdminProducts();
-        } catch (error) { alert(error.message); } finally { if (button) button.disabled = false; }
+        } catch (error) { if (status) status.textContent = error.message || "Could not save the offline sale."; alert(error.message); } finally { if (button) button.disabled = false; }
     });
 })();
 
@@ -2436,3 +2436,4 @@ if (adminProductSearch) adminProductSearch.addEventListener("input", displayAdmi
     setInterval(render, 5000);
     window.renderInventory = render;
 })();
+

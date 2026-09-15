@@ -853,3 +853,4 @@ main > section:not([hidden]) { width: 100%; }
 .inventory-table td small { display: block; color: #94a3b8; font-size: 11px; }
 .inventory-status { font-weight: 700; font-size: 13px; }
 .inventory-available { color: #15803d; }.inventory-low-stock { color: #b45309; }.inventory-out-of-stock { color: #b91c1c; }
+.offline-sale-status { min-height: 22px; color: #b45309; font-weight: 600; }
