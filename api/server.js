@@ -97,7 +97,31 @@ const ensureSharedDataSchema = async () => {
   await pool.query("CREATE SEQUENCE IF NOT EXISTS customer_order_number_seq START WITH 1");
   await pool.query("ALTER TABLE orders ADD COLUMN IF NOT EXISTS order_number BIGINT");
   await pool.query("CREATE UNIQUE INDEX IF NOT EXISTS orders_order_number_unique ON orders (order_number) WHERE order_number IS NOT NULL");
-  await pool.query("CREATE INDEX IF NOT EXISTS reviews_created_at_index ON reviews (created_at DESC)");
+  await pool.query("CREATE INDEX IF NOT EXISTS reviews_created_at_index ON reviews (created_at DESC)");  await pool.query(`
+    CREATE TABLE IF NOT EXISTS offline_sales (
+      id BIGSERIAL PRIMARY KEY,
+      customer_name TEXT,
+      customer_phone TEXT,
+      notes TEXT,
+      total NUMERIC(12, 2) NOT NULL CHECK (total >= 0),
+      payment_method TEXT NOT NULL,
+      created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+    )
+  `);
+  await pool.query(`
+    CREATE TABLE IF NOT EXISTS offline_sale_items (
+      id BIGSERIAL PRIMARY KEY,
+      sale_id BIGINT NOT NULL REFERENCES offline_sales(id) ON DELETE CASCADE,
+      product_id BIGINT NOT NULL,
+      product_name TEXT NOT NULL,
+      quantity INTEGER NOT NULL CHECK (quantity > 0),
+      unit_price NUMERIC(12, 2) NOT NULL CHECK (unit_price >= 0),
+      shortage INTEGER NOT NULL DEFAULT 0 CHECK (shortage >= 0),
+      line_total NUMERIC(12, 2) NOT NULL CHECK (line_total >= 0)
+    )
+  `);
+  await pool.query("CREATE INDEX IF NOT EXISTS offline_sales_created_at_index ON offline_sales (created_at DESC)");
+  await pool.query("CREATE INDEX IF NOT EXISTS offline_sale_items_sale_id_index ON offline_sale_items (sale_id)");
 };
 const allowedOrigins = new Set([
   ...(process.env.FRONTEND_ORIGIN || "").split(",").map(origin => origin.trim()).filter(Boolean),
@@ -327,6 +351,39 @@ app.delete("/api/products/:id", isAdmin, asyncRoute(async (req, res) => {
 
 // Customers can refresh only an order that matches the phone number used when
 // it was placed. This keeps order status available without exposing all orders.
+app.get("/api/offline-sales", isAdmin, asyncRoute(async (_req, res) => {
+  const { rows } = await pool.query(`SELECT s.*, COALESCE(json_agg(i ORDER BY i.id) FILTER (WHERE i.id IS NOT NULL), '[]') AS items FROM offline_sales s LEFT JOIN offline_sale_items i ON i.sale_id=s.id GROUP BY s.id ORDER BY s.created_at DESC`);
+  res.json(rows);
+}));
+
+app.post("/api/offline-sales", isAdmin, asyncRoute(async (req, res) => {
+  const { customerName = "", customerPhone = "", notes = "", paymentMethod = "Cash", items = [] } = req.body || {};
+  if (!Array.isArray(items) || !items.length) return res.status(400).json({ error: "Add at least one product to the sale." });
+  const client = await pool.connect();
+  try {
+    await client.query("BEGIN");
+    const normalized = [];
+    for (const item of items) {
+      const productId = Number(item.productId || item.id);
+      const quantity = Math.floor(Number(item.quantity));
+      if (!Number.isInteger(productId) || quantity < 1) throw new Error("Each sale item needs a valid product and quantity.");
+      const result = await client.query("SELECT id, name, price, stock FROM products WHERE id=$1 FOR UPDATE", [productId]);
+      if (!result.rows[0]) throw new Error(`Product ${productId} was not found.`);
+      const product = result.rows[0];
+      const shortage = Math.max(quantity - Number(product.stock || 0), 0);
+      const decrement = Math.min(quantity, Number(product.stock || 0));
+      if (decrement) await client.query("UPDATE products SET stock=stock-$1, updated_at=NOW() WHERE id=$2", [decrement, productId]);
+      const unitPrice = Number(item.unitPrice ?? product.price) || 0;
+      normalized.push({ productId, productName: product.name, quantity, unitPrice, shortage, lineTotal: quantity * unitPrice });
+    }
+    const total = normalized.reduce((sum, item) => sum + item.lineTotal, 0);
+    const sale = await client.query("INSERT INTO offline_sales (customer_name, customer_phone, notes, total, payment_method) VALUES ($1,$2,$3,$4,$5) RETURNING *", [String(customerName).trim(), String(customerPhone).trim(), String(notes).trim(), total, String(paymentMethod).trim() || "Cash"]);
+    for (const item of normalized) await client.query("INSERT INTO offline_sale_items (sale_id, product_id, product_name, quantity, unit_price, shortage, line_total) VALUES ($1,$2,$3,$4,$5,$6,$7)", [sale.rows[0].id, item.productId, item.productName, item.quantity, item.unitPrice, item.shortage, item.lineTotal]);
+    await client.query("COMMIT");
+    res.status(201).json({ ...sale.rows[0], items: normalized });
+  } catch (error) { await client.query("ROLLBACK"); res.status(409).json({ error: error.message }); }
+  finally { client.release(); }
+}));
 app.post("/api/orders/track", asyncRoute(async (req, res) => {
   const { orderId, customerPhone } = req.body || {};
   if (!orderId || !customerPhone) {
@@ -476,6 +533,7 @@ app.use((error, _req, res, _next) => {
 await ensureProductSchema();
 await ensureSharedDataSchema();
 app.listen(port, () => console.log(`Ray's Enterprise API listening on port ${port}`));
+
 
 
 
