@@ -844,3 +844,6 @@ body.sidebar-collapsed .admin-sidebar { transform: translateX(-105%); }
 body.sidebar-collapsed .sidebar-toggle { left: 18px; }
 .admin-sidebar { transition: transform .25s ease; }
 @media (max-width: 760px) { .sidebar-toggle { left: auto; right: 16px; top: 76px; } body.sidebar-collapsed .sidebar-toggle { left: auto; right: 16px; } }
+/* Active admin tab fills the workspace while inactive sections stay hidden. */
+main > section[hidden] { display: none !important; }
+main > section:not([hidden]) { width: 100%; }
