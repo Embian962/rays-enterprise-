@@ -2316,7 +2316,11 @@ body.trust-panel-open::after { pointer-events: auto; }
 .gallery-dot { width: 8px; height: 8px; padding: 0; border: 1px solid #fff; border-radius: 50%; background: rgba(255,255,255,.65); cursor: pointer; }
 .gallery-dot.is-active { background: #0b4f4a; transform: scale(1.2); }
 
-/* Keep category choices out of the Products view. Later responsive rules style .categories with !important, so these state rules also use !important. */`r`n.products-section > .categories { display: none !important; }`r`nbody.categories-drawer-open .products-section > .categories { display: flex !important; }`r`n`r`n/* Mobile-first customer catalog layout */
+/* Keep category choices out of the Products view. Later responsive rules style .categories with !important, so these state rules also use !important. */
+.products-section > .categories { display: none !important; }
+body.categories-drawer-open .products-section > .categories { display: flex !important; }
+
+/* Mobile-first customer catalog layout */
 @media (max-width: 700px) {
     header {
         display: grid;
@@ -2396,3 +2400,7 @@ body.trust-panel-open::after { pointer-events: auto; }
     .welcome-trust-points { grid-template-columns: 1fr; gap: 8px; margin-top: 22px; }
     .welcome-trust-points span { font-size: .88rem; }
 }
+
+/* Final category visibility state */
+.products-section > .categories { display: none !important; }
+body.categories-drawer-open .products-section > .categories { display: flex !important; }
