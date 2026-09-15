@@ -8,6 +8,7 @@
   "theme_color": "#0f3d3e",
   "description": "Ray's Enterprise manager dashboard for products, orders, inventory and sales.",
   "icons": [
+    { "src": "/rays-enterprise-logo-new.jpg", "sizes": "192x192", "type": "image/jpeg", "purpose": "any maskable" },
     { "src": "/rays-enterprise-logo-new.jpg", "sizes": "512x512", "type": "image/jpeg", "purpose": "any maskable" }
   ]
 }
