@@ -2367,7 +2367,7 @@ if (adminProductSearch) adminProductSearch.addEventListener("input", displayAdmi
 
 // Manager navigation and appearance preferences
 (function setupManagerLayout() {
-    const panels = { dashboard: document.getElementById("admin-dashboard"), products: document.getElementById("products-panel"), offline: document.getElementById("offline-sale-section"), orders: document.getElementById("orders-panel"), feedback: document.getElementById("feedback-inbox"), settings: document.getElementById("admin-settings") };
+    const panels = { dashboard: document.getElementById("admin-dashboard"), details: document.getElementById("dashboard-details"), products: document.getElementById("products-panel"), offline: document.getElementById("offline-sale-section"), orders: document.getElementById("orders-panel"), feedback: document.getElementById("feedback-inbox"), settings: document.getElementById("admin-settings") };
     const welcome = document.getElementById("admin-welcome");
     const extra = [document.getElementById("add-product-section"), document.getElementById("edit-section"), document.getElementById("image-section")];
     const show = function(view) { Object.values(panels).forEach(function(panel) { if (panel) panel.hidden = true; }); extra.forEach(function(panel) { if (panel) panel.hidden = true; }); if (welcome) welcome.hidden = !(view === "welcome" || view === "dashboard"); if (view === "welcome") return; const panel = panels[view]; if (panel) panel.hidden = false; if (view === "orders") displayOrdersByStatus("all-orders"); };
@@ -2377,6 +2377,7 @@ if (adminProductSearch) adminProductSearch.addEventListener("input", displayAdmi
     const saved = localStorage.getItem("rays-admin-theme") || "light"; document.body.classList.toggle("admin-dark", saved === "dark"); const radio = document.querySelector(`input[name="adminTheme"][value="${saved}"]`); if (radio) radio.checked = true;
     document.getElementById("saveThemeButton")?.addEventListener("click", function() { const choice = document.querySelector("input[name=adminTheme]:checked")?.value || "light"; localStorage.setItem("rays-admin-theme", choice); document.body.classList.toggle("admin-dark", choice === "dark"); alert("Appearance saved."); });
 })();
+
 
 
 
