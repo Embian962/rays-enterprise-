@@ -210,7 +210,7 @@
         <section class="admin-section" id="offline-sale-section" hidden>
             <h2>Record Offline Sale</h2>
             <form id="offlineSaleForm">
-                <label for="offlineSaleProduct">Product</label><select id="offlineSaleProduct" required></select>
+                <label for="offlineSaleSearch">Find product</label><input type="search" id="offlineSaleSearch" placeholder="Search by product name or ID" autocomplete="off"><label for="offlineSaleProduct">Product</label><select id="offlineSaleProduct" required></select>
                 <label for="offlineSaleQuantity">Quantity sold</label><input type="number" id="offlineSaleQuantity" min="1" value="1" required>
                 <label for="offlineSalePrice">Selling price per item (KSh)</label><input type="number" id="offlineSalePrice" min="0" step="0.01" required>
                 <label for="offlineSalePayment">Payment method</label><select id="offlineSalePayment"><option>Cash</option><option>M-Pesa</option><option>Card</option><option>Other</option></select>
@@ -619,7 +619,7 @@
     ========================== -->
 
     <script src="api-config.js"></script>
-    <script src="admin.js?v=20260915-offline-sale"></script>
+    <script src="admin.js?v=20260915-sale-search"></script>
 
 
 </body>
@@ -627,6 +627,8 @@
 </html>
 
 <script src="admin-access.js"></script>
+
+
 
 
 
