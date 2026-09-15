@@ -265,7 +265,11 @@ const normalizeProductImages = (images, image, imageUrl) => {
   return [...new Set([...existing, legacy].filter(value => typeof value === "string" && value.trim()))];
 };
 
-app.get("/api/products", asyncRoute(async (_req, res) => {
+app.get("/api/products", asyncRoute(async (req, res) => {
+  if (String(req.query.summary || "") === "1") {
+    const { rows } = await pool.query("SELECT id, name, price, stock, category, colors, featured, sale_price, created_at, updated_at, (COALESCE(jsonb_array_length(images), 0) > 0 OR COALESCE(image, '') <> '') AS has_image FROM products ORDER BY created_at DESC");
+    return res.json(rows.map(product => ({ ...product, images: [], image: "", has_image: Boolean(product.has_image) })));
+  }
   const { rows } = await pool.query("SELECT * FROM products ORDER BY created_at DESC");
   res.json(rows.map(product => ({ ...product, images: normalizeProductImages(product.images, product.image, product.image_url) })));
 }));
@@ -450,6 +454,9 @@ app.use((error, _req, res, _next) => {
 await ensureProductSchema();
 await ensureSharedDataSchema();
 app.listen(port, () => console.log(`Ray's Enterprise API listening on port ${port}`));
+
+
+
 
 
 

@@ -47,7 +47,7 @@ async function loadAdminProducts() {
     // Use the Vercel /api proxy on the live site; use Render directly only for local development.
 
     try {
-        const response = await fetch((apiUrl || "") + "/api/products?v=" + Date.now());
+        const response = await fetch((apiUrl || "") + "/api/products?summary=1&v=" + Date.now());
         if (!response.ok) throw new Error("Could not load products.");
         products = await response.json();
         displayAdminProducts();
@@ -250,8 +250,8 @@ function displayAdminProducts() {
     if (visibleProducts.length === 0) { productList.innerHTML = "<p>No matching products found.</p>"; return; }
 
     visibleProducts.sort(function(a, b) {
-        const aHasImage = !!String(a.image_url || a.image || "").trim();
-        const bHasImage = !!String(b.image_url || b.image || "").trim();
+        const aHasImage = Boolean(a.has_image) || getProductImages(a).length > 0;
+        const bHasImage = Boolean(b.has_image) || getProductImages(b).length > 0;
         return Number(bHasImage) - Number(aHasImage);
     });
 
@@ -2292,6 +2292,7 @@ document.getElementById("cancelImageButton")?.addEventListener("click", function
 
 const adminProductSearch = document.getElementById("admin-product-search");
 if (adminProductSearch) adminProductSearch.addEventListener("input", displayAdminProducts);
+
 
 
 
