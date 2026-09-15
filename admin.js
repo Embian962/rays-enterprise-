@@ -2316,3 +2316,35 @@ if (adminProductSearch) adminProductSearch.addEventListener("input", displayAdmi
 
 
 
+
+// Offline sales entry
+(function setupOfflineSaleForm() {
+    const open = document.getElementById("openOfflineSaleButton");
+    const section = document.getElementById("offline-sale-section");
+    const form = document.getElementById("offlineSaleForm");
+    const select = document.getElementById("offlineSaleProduct");
+    const qty = document.getElementById("offlineSaleQuantity");
+    const price = document.getElementById("offlineSalePrice");
+    const total = document.getElementById("offlineSaleTotal");
+    if (!open || !section || !form || !select) return;
+    const populate = function() {
+        select.innerHTML = '<option value="">Choose a product</option>' + products.map(function(product) { return `<option value="${product.id}" data-price="${Number(product.price) || 0}">${product.name} — KSh ${Number(product.price || 0).toLocaleString()}</option>`; }).join("");
+    };
+    const updateTotal = function() { total.textContent = (Math.max(0, Number(qty.value) || 0) * Math.max(0, Number(price.value) || 0)).toLocaleString(); };
+    open.addEventListener("click", function() { populate(); section.hidden = false; section.scrollIntoView({ behavior: "smooth", block: "start" }); });
+    document.getElementById("cancelOfflineSaleButton")?.addEventListener("click", function() { form.reset(); section.hidden = true; });
+    select.addEventListener("change", function() { const option = select.options[select.selectedIndex]; price.value = option?.dataset.price || ""; updateTotal(); });
+    qty.addEventListener("input", updateTotal); price.addEventListener("input", updateTotal);
+    form.addEventListener("submit", async function(event) {
+        event.preventDefault();
+        if (!select.value) return alert("Choose a product first.");
+        const button = form.querySelector("button[type=submit]"); if (button) button.disabled = true;
+        try {
+            const response = await adminRequest("/api/offline-sales", { method: "POST", body: JSON.stringify({ customerName: document.getElementById("offlineSaleCustomer").value, notes: document.getElementById("offlineSaleNotes").value, paymentMethod: document.getElementById("offlineSalePayment").value, items: [{ productId: Number(select.value), quantity: Number(qty.value), unitPrice: Number(price.value) }] }) });
+            if (!response) return;
+            const sale = await response.json();
+            alert("Offline sale recorded. Stock updated." + (sale.items?.[0]?.shortage ? " Shortage recorded: " + sale.items[0].shortage : ""));
+            form.reset(); section.hidden = true; await loadAdminProducts();
+        } catch (error) { alert(error.message); } finally { if (button) button.disabled = false; }
+    });
+})();
