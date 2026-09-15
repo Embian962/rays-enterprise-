@@ -207,7 +207,8 @@
 
         <!-- OFFLINE SALES -->
         <button type="button" id="openOfflineSaleButton" class="admin-primary-action">Record Offline Sale</button>
-        <section class="admin-section" id="offline-sale-section" hidden>
+        <section class="admin-section offline-sale-panel" id="offline-sale-section" hidden>
+            <button type="button" id="closeOfflineSaleTop" class="panel-close-button" aria-label="Close offline sale">×</button>
             <h2>Record Offline Sale</h2>
             <form id="offlineSaleForm">
                 <label for="offlineSaleSearch">Find product</label><input type="search" id="offlineSaleSearch" placeholder="Search by product name or ID" autocomplete="off"><label for="offlineSaleProduct">Product</label><select id="offlineSaleProduct" required></select>
@@ -627,6 +628,7 @@
 </html>
 
 <script src="admin-access.js"></script>
+
 
 
 
