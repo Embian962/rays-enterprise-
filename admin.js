@@ -2347,7 +2347,8 @@ if (adminProductSearch) adminProductSearch.addEventListener("input", displayAdmi
     const search = document.getElementById("offlineSaleSearch");
     const qty = document.getElementById("offlineSaleQuantity");
     const price = document.getElementById("offlineSalePrice");
-    const total = document.getElementById("offlineSaleTotal");`n    const status = document.getElementById("offlineSaleStatus");
+    const total = document.getElementById("offlineSaleTotal");
+    const status = document.getElementById("offlineSaleStatus");
     if (!open || !section || !form || !select) return;
     const populate = function() {
         const term = (search?.value || "").toLowerCase().trim();
@@ -2436,4 +2437,5 @@ if (adminProductSearch) adminProductSearch.addEventListener("input", displayAdmi
     setInterval(render, 5000);
     window.renderInventory = render;
 })();
+
 
