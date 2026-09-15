@@ -779,3 +779,6 @@ body.edit-editor-open::after { display: none !important; }
 .admin-product-search { margin: 18px 0; }
 .admin-product-search label { display: block; margin-bottom: 6px; font-weight: 700; }
 .admin-product-search input { width: 100%; box-sizing: border-box; padding: 12px 14px; border: 1px solid #cbd5e1; border-radius: 9px; font: inherit; }
+.offline-sale-panel { position: relative; }
+.panel-close-button { position: absolute; top: 14px; right: 18px; border: 0; background: transparent; color: #64748b; font-size: 30px; line-height: 1; cursor: pointer; }
+.panel-close-button:hover { color: #111827; }

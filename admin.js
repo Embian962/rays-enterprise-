@@ -2336,6 +2336,7 @@ if (adminProductSearch) adminProductSearch.addEventListener("input", displayAdmi
     const updateTotal = function() { total.textContent = (Math.max(0, Number(qty.value) || 0) * Math.max(0, Number(price.value) || 0)).toLocaleString(); };
     open.addEventListener("click", function() { populate(); section.hidden = false; section.scrollIntoView({ behavior: "smooth", block: "start" }); });
     document.getElementById("cancelOfflineSaleButton")?.addEventListener("click", function() { form.reset(); section.hidden = true; });
+    document.getElementById("closeOfflineSaleTop")?.addEventListener("click", function() { form.reset(); section.hidden = true; });
     search?.addEventListener("input", populate);
     select.addEventListener("change", function() { const option = select.options[select.selectedIndex]; price.value = option?.dataset.price || ""; updateTotal(); });
     qty.addEventListener("input", updateTotal); price.addEventListener("input", updateTotal);
@@ -2352,4 +2353,5 @@ if (adminProductSearch) adminProductSearch.addEventListener("input", displayAdmi
         } catch (error) { alert(error.message); } finally { if (button) button.disabled = false; }
     });
 })();
+
 
