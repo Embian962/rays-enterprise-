@@ -2176,7 +2176,10 @@ updateDashboard = function() {
         "pending-orders": counts.Pending,
         "processing-orders": counts.Processing,
         "completed-orders": counts.Completed,
-        "total-sales": (totalSales + offlineSalesCache.reduce(function(sum, sale) { return sum + (Number(sale.total) || 0); }, 0)).toLocaleString()
+        "total-sales": (totalSales + offlineSalesCache.reduce(function(sum, sale) { return sum + (Number(sale.total) || 0); }, 0)).toLocaleString(),
+        "offline-sales-total": offlineSalesCache.reduce(function(sum, sale) { return sum + (Number(sale.total) || 0); }, 0).toLocaleString(),
+        "online-sales-total": totalSales.toLocaleString(),
+        "combined-sales-total": (totalSales + offlineSalesCache.reduce(function(sum, sale) { return sum + (Number(sale.total) || 0); }, 0)).toLocaleString()
     };
     refreshDashboardDetails();
     Object.keys(values).forEach(function(id) {
@@ -2459,6 +2462,7 @@ if (adminProductSearch) adminProductSearch.addEventListener("input", displayAdmi
     setInterval(render, 5000);
     window.renderInventory = render;
 })();
+
 
 
 

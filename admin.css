@@ -866,3 +866,6 @@ body:not(.admin-signed-in) main { margin-top: 30px; }
 .image-manager-item { display: grid; gap: 6px; font-size: 12px; }
 .image-manager-item img { width: 100%; aspect-ratio: 1; object-fit: cover; border-radius: 8px; border: 1px solid #cbd5e1; }
 .image-manager-item button { padding: 6px; border: 0; border-radius: 6px; cursor: pointer; }
+.sales-summary-cards { grid-template-columns: repeat(3, minmax(0, 1fr)); margin-bottom: 20px; }
+.sales-summary-cards .dashboard-card { border-top: 4px solid #0f766e; }
+@media (max-width: 760px) { .sales-summary-cards { grid-template-columns: 1fr; } }
