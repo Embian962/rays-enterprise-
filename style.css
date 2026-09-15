@@ -2092,6 +2092,9 @@ footer a:hover { color: var(--accent); }
     }
 }
 
+/* Customer catalog: stock is intentionally private; customers see price and actions only. */
+.product-card .stock-available, .product-card .stock-unavailable { display: none !important; }
+
 /* Customer light/dark mode */
 .theme-toggle {
     flex: 0 0 auto;
