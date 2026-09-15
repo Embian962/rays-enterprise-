@@ -2374,6 +2374,7 @@ if (adminProductSearch) adminProductSearch.addEventListener("input", displayAdmi
     const history = document.getElementById("offlineSaleHistoryList");
     const loadHistory = async function() { if (!history) return; try { const response = await adminRequest("/api/offline-sales"); if (!response) return; const sales = await response.json(); history.innerHTML = sales.length ? sales.map(function(sale) { return `<article class="offline-sale-history-item"><strong>Sale #${sale.id}</strong><span>${new Date(sale.created_at).toLocaleString()}</span><span>${sale.payment_method} · KSh ${Number(sale.total).toLocaleString()}</span><small>${(sale.items || []).map(function(item) { return `${item.product_name} × ${item.quantity}`; }).join(", ")}</small></article>`; }).join("") : "<p>No offline sales recorded yet.</p>"; } catch (error) { history.innerHTML = "<p>Could not load offline sales.</p>"; } };
     open.addEventListener("click", loadHistory);
+    document.querySelector("a[href=\"#offline-history-section\"]")?.addEventListener("click", loadHistory);
     search?.addEventListener("input", populate);
     select.addEventListener("change", function() { const option = select.options[select.selectedIndex]; price.value = option?.dataset.price || ""; updateTotal(); });
     qty.addEventListener("input", updateTotal); price.addEventListener("input", updateTotal);
@@ -2396,14 +2397,14 @@ if (adminProductSearch) adminProductSearch.addEventListener("input", displayAdmi
 
 // Manager navigation and appearance preferences
 (function setupManagerLayout() {
-    const panels = { dashboard: document.getElementById("admin-dashboard"), details: document.getElementById("dashboard-details"), inventory: document.getElementById("inventory-workspace"), reports: document.getElementById("dashboard-details"), products: document.getElementById("products-panel"), offline: document.getElementById("offline-sale-section"), orders: document.getElementById("orders-panel"), feedback: document.getElementById("feedback-inbox"), settings: document.getElementById("admin-settings") };
+    const panels = { dashboard: document.getElementById("admin-dashboard"), details: document.getElementById("dashboard-details"), inventory: document.getElementById("inventory-workspace"), reports: document.getElementById("dashboard-details"), products: document.getElementById("products-panel"), offline: document.getElementById("offline-sale-section"), offlineHistory: document.getElementById("offline-history-section"), orders: document.getElementById("orders-panel"), feedback: document.getElementById("feedback-inbox"), settings: document.getElementById("admin-settings") };
     const welcome = document.getElementById("admin-welcome");
     const extra = [document.getElementById("add-product-section"), document.getElementById("edit-section"), document.getElementById("image-section")];
     const offlineButton = document.getElementById("openOfflineSaleButton");
     const feedbackButton = document.getElementById("feedbackInboxButton");
     const show = function(view) { document.querySelectorAll("main > section").forEach(function(section) { section.hidden = true; }); Object.values(panels).forEach(function(panel) { if (panel) panel.hidden = true; }); extra.forEach(function(panel) { if (panel) panel.hidden = true; }); if (welcome) welcome.hidden = view !== "dashboard"; if (offlineButton) offlineButton.hidden = view !== "offline"; if (feedbackButton) feedbackButton.hidden = view !== "feedback"; if (view === "welcome") return; const panel = panels[view]; if (panel) { panel.hidden = false; panel.style.display = ""; } if (view === "dashboard" && panels.details) panels.details.hidden = false; if (view === "inventory" && window.renderInventory) window.renderInventory(); if (view === "orders") displayOrdersByStatus("all-orders"); };
     show("dashboard");
-    document.querySelectorAll(".admin-sidebar a").forEach(function(link) { link.addEventListener("click", function(event) { event.preventDefault(); const id = link.getAttribute("href").slice(1); const view = id === "admin-dashboard" ? "dashboard" : id === "inventory-panel" ? "inventory" : id === "sales-reports" ? "reports" : id === "products-panel" ? "products" : id === "offline-sale-section" ? "offline" : id === "orders-panel" ? "orders" : id === "feedback-inbox" ? "feedback" : "settings"; show(view); document.body.classList.add("sidebar-collapsed"); }); });
+    document.querySelectorAll(".admin-sidebar a").forEach(function(link) { link.addEventListener("click", function(event) { event.preventDefault(); const id = link.getAttribute("href").slice(1); const view = id === "admin-dashboard" ? "dashboard" : id === "inventory-panel" ? "inventory" : id === "sales-reports" ? "reports" : id === "products-panel" ? "products" : id === "offline-history-section" ? "offlineHistory" : id === "offline-sale-section" ? "offline" : id === "orders-panel" ? "orders" : id === "feedback-inbox" ? "feedback" : "settings"; show(view); document.body.classList.add("sidebar-collapsed"); }); });
     window.openAdminPanel = function(section) { show(section === "products" ? "products" : section === "all-orders" || section === "Pending" || section === "Processing" || section === "Completed" ? "orders" : "dashboard"); };
     const saved = localStorage.getItem("rays-admin-theme") || "light"; document.body.classList.toggle("admin-dark", saved === "dark"); const radio = document.querySelector(`input[name="adminTheme"][value="${saved}"]`); if (radio) radio.checked = true;
     document.getElementById("saveThemeButton")?.addEventListener("click", function() { const choice = document.querySelector("input[name=adminTheme]:checked")?.value || "light"; localStorage.setItem("rays-admin-theme", choice); document.body.classList.toggle("admin-dark", choice === "dark"); alert("Appearance saved."); });
@@ -2447,6 +2448,7 @@ if (adminProductSearch) adminProductSearch.addEventListener("input", displayAdmi
     setInterval(render, 5000);
     window.renderInventory = render;
 })();
+
 
 
 
