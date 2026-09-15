@@ -2567,6 +2567,7 @@ if (reviewForm) {
             reviewForm.reset();
             delete reviewForm.dataset.requestId;
             alert("Thank you for your feedback!");
+            loadPublicDashboardReviews();
         } catch (error) {
             alert(error.message || "Your feedback could not be sent. Please try again.");
         } finally {
@@ -2624,6 +2625,21 @@ if (contactForm) {
 }
 
 
+async function loadPublicDashboardReviews() {
+    const list = document.getElementById("dashboard-review-list");
+    if (!list) return;
+    try {
+        const response = await fetch((window.RAYS_API_URL || "").replace(/\/$/, "") + "/api/reviews");
+        if (!response.ok) throw new Error("Review request failed");
+        const reviews = await response.json();
+        if (!reviews.length) { list.innerHTML = "<p class=\"dashboard-reviews-empty\">Be the first customer to share your experience.</p>"; return; }
+        const average = reviews.reduce(function(total, review) { return total + (Number(review.rating) || 0); }, 0) / reviews.length;
+        list.innerHTML = `<div class="dashboard-rating-summary"><strong>${average.toFixed(1)} / 5</strong><span>${"★".repeat(Math.round(average))}${"☆".repeat(5 - Math.round(average))} · ${reviews.length} review${reviews.length === 1 ? "" : "s"}</span></div>` + reviews.slice(0, 3).map(function(review) {
+            const stars = "★".repeat(Number(review.rating) || 0) + "☆".repeat(5 - (Number(review.rating) || 0));
+            return `<article class="dashboard-review-card"><div class="dashboard-review-stars">${stars}</div><p>“${escapeProductHtml(review.comment)}”</p><strong>${escapeProductHtml(review.name || "Customer")}</strong>${review.product ? `<small>${escapeProductHtml(review.product)}</small>` : ""}</article>`;
+        }).join("");
+    } catch (error) { list.innerHTML = "<p class=\"dashboard-reviews-empty\">Customer reviews will appear here soon.</p>"; }
+}
 // ==========================================
 // INITIALIZE
 // ==========================================
@@ -2631,6 +2647,7 @@ if (contactForm) {
 loadProducts();
 
 populateReviewProducts();
+loadPublicDashboardReviews();
 
 displayCart();
 

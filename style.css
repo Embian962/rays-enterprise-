@@ -2462,3 +2462,20 @@ body.dark-mode .product-details-main-image, body.dark-mode .product-details-thum
 .customer-dashboard-toggle:hover, .customer-dashboard-toggle:focus-visible { background: #e8f2f1; }
 body.dark-mode .customer-dashboard-toggle:hover, body.dark-mode .customer-dashboard-toggle:focus-visible { background: #244143; }
 @media (max-width: 700px) { .dashboard-promos { grid-template-columns: 1fr; gap: 8px; margin-top: 18px; } .dashboard-promos span { font-size: .84rem; } }
+.dashboard-reviews { margin: 24px 0 12px; max-width: 900px; padding: 18px; border: 1px solid rgba(255,255,255,.25); border-radius: 16px; background: rgba(0,0,0,.14); }
+.dashboard-reviews-heading { display: flex; align-items: end; justify-content: space-between; gap: 14px; margin-bottom: 14px; }
+.dashboard-reviews-heading .welcome-eyebrow { margin-bottom: 2px; }
+.dashboard-reviews-heading h3 { color: #fff; font-size: 1.25rem; }
+.dashboard-reviews-heading a { color: #fff; font-weight: 800; text-decoration: underline; white-space: nowrap; }
+.dashboard-rating-summary { display: flex; align-items: baseline; gap: 10px; margin-bottom: 12px; color: #e8f8f4; }
+.dashboard-rating-summary strong { font-size: 1.25rem; }
+.dashboard-review-list { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 10px; }
+.dashboard-review-card { padding: 13px; border-radius: 12px; background: rgba(255,255,255,.95); color: #173c3b; }
+.dashboard-review-card p { margin: 6px 0 8px; font-size: .9rem; line-height: 1.45; }
+.dashboard-review-card strong, .dashboard-review-card small { display: block; }
+.dashboard-review-card small { margin-top: 2px; color: #6c7e7e; }
+.dashboard-review-stars { color: #d88a00; letter-spacing: .08em; }
+.dashboard-reviews-empty, .dashboard-reviews-loading { color: #e8f8f4; }
+body.dark-mode .dashboard-review-card { background: #203638; color: #e6f0ef; }
+body.dark-mode .dashboard-review-card small { color: #b7c9c7; }
+@media (max-width: 700px) { .dashboard-reviews { padding: 14px; } .dashboard-review-list { grid-template-columns: 1fr; } .dashboard-reviews-heading { align-items: start; flex-direction: column; } }
