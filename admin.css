@@ -847,3 +847,9 @@ body.sidebar-collapsed .sidebar-toggle { left: 18px; }
 /* Active admin tab fills the workspace while inactive sections stay hidden. */
 main > section[hidden] { display: none !important; }
 main > section:not([hidden]) { width: 100%; }
+.inventory-table-wrap { overflow-x: auto; margin-top: 18px; }
+.inventory-table { width: 100%; border-collapse: collapse; }
+.inventory-table th, .inventory-table td { padding: 13px 10px; border-bottom: 1px solid #e2e8f0; text-align: left; }
+.inventory-table td small { display: block; color: #94a3b8; font-size: 11px; }
+.inventory-status { font-weight: 700; font-size: 13px; }
+.inventory-available { color: #15803d; }.inventory-low-stock { color: #b45309; }.inventory-out-of-stock { color: #b91c1c; }

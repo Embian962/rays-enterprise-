@@ -15,7 +15,7 @@
 
     <link
         rel="stylesheet"
-        href="admin.css?v=20260915-full-tab"
+        href="admin.css?v=20260915-inventory"
     >
 
 </head>
@@ -213,6 +213,12 @@
             <article class="dashboard-detail-card"><h3>Sales overview</h3><div class="sales-overview-bars"><span style="height:35%"></span><span style="height:58%"></span><span style="height:44%"></span><span style="height:78%"></span><span style="height:64%"></span><span style="height:88%"></span><span style="height:72%"></span></div><p>Online and offline sales performance</p></article>
             <article class="dashboard-detail-card" id="inventory-panel"><h3>Low-stock products</h3><div id="low-stock-list"><p>Stock alerts will appear here.</p></div></article>
             <article class="dashboard-detail-card" id="sales-reports"><h3>Recent online/offline sales</h3><div id="recent-sales-list"><p>Recent activity will appear here.</p></div></article>
+        </section>
+        <section class="admin-section inventory-workspace" id="inventory-workspace" hidden>
+            <h2>Inventory</h2>
+            <label for="inventorySearch">Search inventory</label>
+            <input type="search" id="inventorySearch" placeholder="Search by product name or ID" autocomplete="off">
+            <div class="inventory-table-wrap"><table class="inventory-table"><thead><tr><th>Product</th><th>Category</th><th>Stock</th><th>Status</th></tr></thead><tbody id="inventoryTableBody"></tbody></table></div>
         </section>
         <!-- OFFLINE SALES -->
         <button type="button" id="openOfflineSaleButton" class="admin-primary-action">Record Offline Sale</button>
@@ -636,7 +642,7 @@
     ========================== -->
 
     <script src="api-config.js"></script>
-    <script src="admin.js?v=20260915-full-tab"></script>
+    <script src="admin.js?v=20260915-inventory"></script>
 
 
 </body>
@@ -644,6 +650,8 @@
 </html>
 
 <script src="admin-access.js"></script>
+
+
 
 
 
