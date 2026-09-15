@@ -936,6 +936,23 @@ function deleteOrder(index) {
 // DASHBOARD STATISTICS
 // ==========================================
 
+let offlineSalesCache = [];
+let dashboardDetailsRequest = null;
+async function refreshDashboardDetails() {
+    const lowStock = document.getElementById("low-stock-list");
+    const recent = document.getElementById("recent-sales-list");
+    if (lowStock) {
+        const alerts = products.filter(function(product) { return Number(product.stock) <= 3; }).slice(0, 8);
+        lowStock.innerHTML = alerts.length ? alerts.map(function(product) { return `<div class="dashboard-list-row"><span>${product.name}</span><strong>${Number(product.stock) || 0} left</strong></div>`; }).join("") : "<p>All products have healthy stock.</p>";
+    }
+    if (!adminToken || dashboardDetailsRequest) return dashboardDetailsRequest;
+    dashboardDetailsRequest = adminRequest("/api/offline-sales").then(function(response) { return response ? response.json() : []; }).then(function(sales) {
+        offlineSalesCache = Array.isArray(sales) ? sales : [];
+        const activity = sharedOrders.map(function(order) { return { date: order.createdAt || order.created_at, label: "Online order", total: Number(order.total) || 0 }; }).concat(offlineSalesCache.map(function(sale) { return { date: sale.created_at, label: "Offline sale", total: Number(sale.total) || 0 }; })).sort(function(a,b) { return new Date(b.date) - new Date(a.date); }).slice(0, 6);
+        if (recent) recent.innerHTML = activity.length ? activity.map(function(item) { return `<div class="dashboard-list-row"><span>${item.label}<small>${new Date(item.date).toLocaleString()}</small></span><strong>KSh ${item.total.toLocaleString()}</strong></div>`; }).join("") : "<p>No sales recorded yet.</p>";
+    }).catch(function() { if (recent) recent.innerHTML = "<p>Sales activity unavailable.</p>"; }).finally(function() { dashboardDetailsRequest = null; });
+    return dashboardDetailsRequest;
+}
 updateDashboard = function() {
 
     const orders =
@@ -2148,8 +2165,9 @@ updateDashboard = function() {
         "pending-orders": counts.Pending,
         "processing-orders": counts.Processing,
         "completed-orders": counts.Completed,
-        "total-sales": totalSales.toLocaleString()
+        "total-sales": (totalSales + offlineSalesCache.reduce(function(sum, sale) { return sum + (Number(sale.total) || 0); }, 0)).toLocaleString()
     };
+    refreshDashboardDetails();
     Object.keys(values).forEach(function(id) {
         const element = document.getElementById(id);
         if (element) element.textContent = values[id];
@@ -2377,6 +2395,7 @@ if (adminProductSearch) adminProductSearch.addEventListener("input", displayAdmi
     const saved = localStorage.getItem("rays-admin-theme") || "light"; document.body.classList.toggle("admin-dark", saved === "dark"); const radio = document.querySelector(`input[name="adminTheme"][value="${saved}"]`); if (radio) radio.checked = true;
     document.getElementById("saveThemeButton")?.addEventListener("click", function() { const choice = document.querySelector("input[name=adminTheme]:checked")?.value || "light"; localStorage.setItem("rays-admin-theme", choice); document.body.classList.toggle("admin-dark", choice === "dark"); alert("Appearance saved."); });
 })();
+
 
 
 
