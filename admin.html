@@ -15,7 +15,7 @@
 
     <link
         rel="stylesheet"
-        href="admin.css?v=20260915-auth-sidebar"
+        href="admin.css?v=20260915-image-manager"
     >
 
 </head>
@@ -622,6 +622,7 @@
                 <input type="hidden" id="imageProductIndex">
                 <label for="imageFile">Product Image (optional)</label>
                 <input type="file" id="imageFile" accept="image/*" multiple required>
+                <div id="imageGalleryManager" class="image-gallery-manager"></div>
                 <div class="product-form-actions">
                     <button type="submit">Save Image</button>
                     <button type="button" id="cancelImageButton">Cancel</button>
@@ -645,7 +646,7 @@
     ========================== -->
 
     <script src="api-config.js"></script>
-    <script src="admin.js?v=20260915-auth-sidebar"></script>
+    <script src="admin.js?v=20260915-image-manager"></script>
 
 
 </body>
@@ -653,6 +654,8 @@
 </html>
 
 <script src="admin-access.js"></script>
+
+
 
 
 

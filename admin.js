@@ -2287,11 +2287,20 @@ updateDashboard = function() {
 syncSalesBalanceVisibility();
 
 
+let imageDraft = [];
+function renderImageGalleryManager() {
+    const box = document.getElementById("imageGalleryManager"); if (!box) return;
+    box.innerHTML = imageDraft.length ? imageDraft.map(function(url, imageIndex) { return `<div class="image-manager-item"><img src="${url}" alt="Product image ${imageIndex + 1}"><strong>${imageIndex === 0 ? "Main image" : ""}</strong><button type="button" data-remove-image="${imageIndex}">Remove</button>${imageIndex ? `<button type="button" data-main-image="${imageIndex}">Make main</button>` : ""}</div>`; }).join("") : "<p>No images saved yet.</p>";
+    box.querySelectorAll("[data-remove-image]").forEach(function(button) { button.addEventListener("click", function() { imageDraft.splice(Number(button.dataset.removeImage), 1); renderImageGalleryManager(); }); });
+    box.querySelectorAll("[data-main-image]").forEach(function(button) { button.addEventListener("click", function() { const image = imageDraft.splice(Number(button.dataset.mainImage), 1)[0]; imageDraft.unshift(image); renderImageGalleryManager(); }); });
+}
 function addProductImage(index) {
     const product = products[index];
     if (!product) return;
     document.getElementById("imageProductIndex").value = index;
-    document.getElementById("image-product-name").textContent = "Adding image for: " + product.name;
+    document.getElementById("image-product-name").textContent = "Managing images for: " + product.name;
+    imageDraft = getProductImages(product).slice();
+    renderImageGalleryManager();
     document.getElementById("image-section").hidden = false;
     document.body.classList.remove("edit-editor-open");
     document.body.classList.add("image-editor-open");
@@ -2450,6 +2459,7 @@ if (adminProductSearch) adminProductSearch.addEventListener("input", displayAdmi
     setInterval(render, 5000);
     window.renderInventory = render;
 })();
+
 
 
 
