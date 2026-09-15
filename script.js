@@ -12,8 +12,10 @@
     const signIn = document.getElementById("account-page-sign-in");
     const createAccount = document.getElementById("account-page-create");
     const signOut = document.getElementById("account-page-sign-out");
-    if (!accountButton || !page || !window.supabase || !window.RAYS_SUPABASE_URL || !window.RAYS_SUPABASE_ANON_KEY) return;
-    const client = window.supabase.createClient(window.RAYS_SUPABASE_URL, window.RAYS_SUPABASE_ANON_KEY);
+    if (!accountButton || !page) return;
+    const client = window.supabase && window.RAYS_SUPABASE_URL && window.RAYS_SUPABASE_ANON_KEY
+        ? window.supabase.createClient(window.RAYS_SUPABASE_URL, window.RAYS_SUPABASE_ANON_KEY)
+        : null;
     let session = null;
     const update = function(nextSession) {
         session = nextSession;
@@ -31,6 +33,7 @@
     const openPage = function() { page.hidden = false; document.body.classList.add("account-page-open"); update(session); window.scrollTo(0, 0); };
     const closePage = function() { page.hidden = true; document.body.classList.remove("account-page-open"); };
     const startGoogle = async function() {
+        if (!client) { alert("Sign-in is temporarily unavailable. Please try again later."); return; }
         const redirectBase = /^(localhost|127\.)/.test(window.location.hostname) ? "https://rays-enterprise-sw87.vercel.app" : window.location.origin;
         const result = await client.auth.signInWithOAuth({ provider: "google", options: { redirectTo: redirectBase + window.location.pathname } });
         if (result.error) alert("Google sign-in is not available yet. Please try again later.");
@@ -38,9 +41,11 @@
     accountButton.addEventListener("click", openPage);
     back.addEventListener("click", closePage);
     signIn.addEventListener("click", startGoogle); createAccount.addEventListener("click", startGoogle);
-    signOut.addEventListener("click", async function() { await client.auth.signOut(); update(null); });
-    client.auth.getSession().then(function(result) { update(result.data.session); });
-    client.auth.onAuthStateChange(function(_event, nextSession) { update(nextSession); });
+    signOut.addEventListener("click", async function() { if (client) await client.auth.signOut(); update(null); });
+    if (client) {
+        client.auth.getSession().then(function(result) { update(result.data.session); });
+        client.auth.onAuthStateChange(function(_event, nextSession) { update(nextSession); });
+    }
 })();
 
 // ==========================================
