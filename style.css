@@ -2370,3 +2370,14 @@ body.trust-panel-open::after { pointer-events: auto; }
     nav#customer-sidebar .customer-categories-toggle { color: var(--ink); background: transparent; }
     body.dark-mode nav#customer-sidebar > a:hover, body.dark-mode nav#customer-sidebar > a:focus-visible { background: #244143; }
 }
+/* Mobile header spacing: keep brand, menu, cart, and account from colliding */
+@media (max-width: 700px) {
+    header { grid-template-columns: 44px minmax(0, 1fr) auto; padding: 10px 8px; column-gap: 8px; }
+    header .catalog-logo { width: 44px; height: 44px; }
+    header h1 { grid-column: 2; min-width: 0; overflow: hidden; white-space: nowrap; font-size: .98rem; }
+    header p { grid-column: 2; min-width: 0; overflow: hidden; white-space: nowrap; font-size: .68rem; }
+    .customer-top-actions { position: static; grid-column: 3; grid-row: 1 / span 2; gap: 3px; }
+    .customer-top-actions > a { padding: 6px 5px; font-size: .7rem; }
+    .customer-top-actions .customer-auth-button { padding: 6px 7px; font-size: .7rem; }
+    .customer-menu-toggle { width: 32px; height: 32px; font-size: 1rem; }
+}

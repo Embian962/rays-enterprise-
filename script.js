@@ -250,7 +250,13 @@ function hideAllSections() {
 
         "order-confirmation",
 
-        "my-orders"
+        "my-orders",
+
+        "reviews",
+
+        "contact",
+
+        "customer-trust"
 
     ];
 
