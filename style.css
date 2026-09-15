@@ -2379,6 +2379,8 @@ body.categories-drawer-open .products-section > .categories { display: flex !imp
 }
 /* Keep the customer theme control available inside the mobile sidebar. */
 @media (max-width: 700px) { nav#customer-sidebar .theme-toggle { display: block !important; color: var(--ink); background: transparent; } }
+/* Keep the customer controls available while scrolling on mobile. */
+@media (max-width: 700px) { header { position: sticky; top: 0; z-index: 1100; } }
 /* Mobile header spacing: keep brand, menu, cart, and account from colliding */
 @media (max-width: 700px) {
     header { grid-template-columns: 44px minmax(0, 1fr) auto; padding: 10px 8px 10px 50px; column-gap: 8px; }
