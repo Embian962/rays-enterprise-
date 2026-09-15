@@ -874,5 +874,9 @@ body:not(.admin-signed-in) main { margin-top: 30px; }
 .image-gallery-manager { display: grid; grid-template-columns: repeat(auto-fill,minmax(130px,1fr)); gap: 12px; margin: 16px 0; }
 .image-manager-item { display: grid; gap: 6px; font-size: 12px; }
 .image-manager-item img { width: 100%; aspect-ratio: 1; object-fit: cover; border-radius: 8px; border: 1px solid #cbd5e1; }
-.image-manager-item button { padding: 6px; border: 0; border-radius: 6px; cursor: pointer; }
-
+.image-manager-item button { padding: 6px; border: 0; border-radius: 6px; cursor: pointer; }.admin-install-help-card { position: fixed; right: 20px; top: 78px; z-index: 300; width: min(360px, calc(100vw - 40px)); padding: 24px; border-radius: 14px; background: #fff; color: #0f172a; box-shadow: 0 16px 44px rgba(15,23,42,.28); }
+.admin-install-help-card h2 { margin: 0 0 12px; color: #0f172a; font-size: 20px; }
+.admin-install-help-card p { margin: 9px 0; line-height: 1.5; }
+.admin-install-help-card > button { position: absolute; top: 8px; right: 10px; border: 0; background: transparent; color: #64748b; font-size: 24px; cursor: pointer; }
+body.admin-dark .admin-install-help-card { background: #1e293b; color: #e2e8f0; }
+body.admin-dark .admin-install-help-card h2 { color: #f8fafc; }
