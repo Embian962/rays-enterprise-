@@ -2455,3 +2455,10 @@ body.dark-mode .product-details-main-image, body.dark-mode .product-details-thum
     .customer-menu-toggle { width: 42px; height: 42px; border: 2px solid #f5b400; color: #102526; background: #f5b400; font-size: 1.25rem; }
     .customer-menu-toggle:hover, .customer-menu-toggle:focus-visible { color: #102526; background: #ffd45b; }
 }
+/* Customer dashboard landing content */
+.dashboard-promos { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 10px; max-width: 760px; margin: 22px 0 12px; }
+.dashboard-promos span { padding: 12px 14px; border: 1px solid rgba(255,255,255,.25); border-radius: 12px; color: #f0fbf8; background: rgba(0,0,0,.16); font-size: .9rem; }
+.customer-dashboard-toggle { color: var(--ink); background: transparent; }
+.customer-dashboard-toggle:hover, .customer-dashboard-toggle:focus-visible { background: #e8f2f1; }
+body.dark-mode .customer-dashboard-toggle:hover, body.dark-mode .customer-dashboard-toggle:focus-visible { background: #244143; }
+@media (max-width: 700px) { .dashboard-promos { grid-template-columns: 1fr; gap: 8px; margin-top: 18px; } .dashboard-promos span { font-size: .84rem; } }

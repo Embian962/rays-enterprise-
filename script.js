@@ -263,7 +263,9 @@ function hideAllSections() {
 
         "contact",
 
-        "customer-trust"
+        "customer-trust",
+
+        "customer-welcome"
 
     ];
 
@@ -284,6 +286,13 @@ function hideAllSections() {
 
 }
 
+
+function showCustomerDashboard(event) {
+    if (event) event.preventDefault();
+    hideAllSections();
+    const dashboard = document.getElementById("customer-welcome");
+    if (dashboard) { dashboard.style.display = "block"; dashboard.scrollIntoView({ behavior: "smooth" }); }
+}
 
 // ==========================================
 // SHOW PRODUCTS
@@ -2687,10 +2696,17 @@ document.addEventListener("click", function(event) {
     };
     toggle.addEventListener("click", function() { setOpen(!document.body.classList.contains("customer-sidebar-open")); });
     closeButton.addEventListener("click", function() { setOpen(false); });
-    sidebar.addEventListener("click", function(event) { if (event.target.closest("a") || event.target.closest("#customer-categories-toggle")) setOpen(false); });
+    sidebar.addEventListener("click", function(event) { if (event.target.closest("a") || event.target.closest("#customer-categories-toggle") || event.target.closest("#customer-dashboard-toggle")) setOpen(false); });
     document.addEventListener("keydown", function(event) { if (event.key === "Escape") setOpen(false); });
     document.addEventListener("click", function(event) { if (document.body.classList.contains("customer-sidebar-open") && !sidebar.contains(event.target) && !toggle.contains(event.target)) setOpen(false); });
 })();
+
+// Customer dashboard navigation
+(function setupCustomerDashboard() {
+    const button = document.getElementById("customer-dashboard-toggle");
+    if (button) button.addEventListener("click", showCustomerDashboard);
+})();
+
 // Customer categories drawer
 (function setupCategoriesDrawer() {
     const toggle = document.getElementById("customer-categories-toggle");
