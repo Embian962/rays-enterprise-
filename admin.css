@@ -809,3 +809,14 @@ header { margin-left: -230px; padding-left: calc(6% + 230px); }
   header { margin-left: 0; padding-left: 6%; }
   main { width: 94%; margin: 20px auto; }
 }
+.admin-welcome { min-height: 420px; display: flex; flex-direction: column; align-items: center; justify-content: center; text-align: center; background: #fff; border-radius: 14px; padding: 40px; box-shadow: 0 4px 18px rgba(0,0,0,.06); }
+.admin-welcome img { width: 130px; height: 130px; object-fit: contain; margin-bottom: 20px; }
+.admin-welcome h2 { color: #111827; margin-bottom: 8px; }
+.admin-welcome p { color: #64748b; }
+.admin-settings-panel h3 { margin: 8px 0 14px; }
+.theme-option { display: block; margin: 12px 0; }
+.theme-option input { margin-right: 8px; }
+body.admin-dark { background: #0f172a; color: #e2e8f0; }
+body.admin-dark header, body.admin-dark .admin-sidebar { background: #020617; }
+body.admin-dark .dashboard, body.admin-dark .admin-section, body.admin-dark .admin-products, body.admin-dark .admin-orders, body.admin-dark .admin-welcome, body.admin-dark .edit-section { background: #1e293b; color: #e2e8f0; }
+body.admin-dark h2, body.admin-dark h3, body.admin-dark label { color: #f8fafc; }
