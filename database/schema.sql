@@ -13,6 +13,26 @@ CREATE TABLE products (
   updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
 );
 
+CREATE TABLE offline_sales (
+  id BIGSERIAL PRIMARY KEY,
+  customer_name TEXT,
+  customer_phone TEXT,
+  notes TEXT,
+  total NUMERIC(12, 2) NOT NULL CHECK (total >= 0),
+  payment_method TEXT NOT NULL,
+  created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+);
+
+CREATE TABLE offline_sale_items (
+  id BIGSERIAL PRIMARY KEY,
+  sale_id BIGINT NOT NULL REFERENCES offline_sales(id) ON DELETE CASCADE,
+  product_id BIGINT NOT NULL,
+  product_name TEXT NOT NULL,
+  quantity INTEGER NOT NULL CHECK (quantity > 0),
+  unit_price NUMERIC(12, 2) NOT NULL CHECK (unit_price >= 0),
+  shortage INTEGER NOT NULL DEFAULT 0 CHECK (shortage >= 0),
+  line_total NUMERIC(12, 2) NOT NULL CHECK (line_total >= 0)
+);
 CREATE TABLE orders (
   id BIGSERIAL PRIMARY KEY,
   customer_name TEXT NOT NULL,
@@ -51,4 +71,5 @@ CREATE SEQUENCE customer_order_number_seq START WITH 1;
 ALTER TABLE orders ADD COLUMN order_number BIGINT;
 CREATE UNIQUE INDEX orders_order_number_unique ON orders (order_number) WHERE order_number IS NOT NULL;
 CREATE INDEX reviews_created_at_index ON reviews (created_at DESC);
+
 
