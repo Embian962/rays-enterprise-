@@ -1,0 +1,13 @@
+{
+  "name": "Ray's Enterprise Admin",
+  "short_name": "Rays Admin",
+  "start_url": "/admin.html",
+  "scope": "/",
+  "display": "standalone",
+  "background_color": "#f4f7f8",
+  "theme_color": "#0f3d3e",
+  "description": "Ray's Enterprise manager dashboard for products, orders, inventory and sales.",
+  "icons": [
+    { "src": "/rays-enterprise-logo-new.jpg", "sizes": "512x512", "type": "image/jpeg", "purpose": "any maskable" }
+  ]
+}

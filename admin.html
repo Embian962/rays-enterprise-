@@ -12,6 +12,8 @@
 
     <title>Ray's Enterprise - Admin</title>
     <meta name="robots" content="noindex, nofollow, noarchive">
+    <meta name="theme-color" content="#0f3d3e">
+    <link rel="manifest" href="admin-manifest.json">
 
     <link
         rel="stylesheet"
@@ -53,6 +55,7 @@
         <button type="button" id="adminLogoutButton" style="display: none;">Sign out</button>
         <span id="adminLoginStatus" aria-live="polite"></span>
         <button type="button" id="enable-order-notifications" class="notification-button">Enable order notifications</button>
+        <button type="button" id="install-admin-app" class="notification-button" hidden>Install admin app</button>
         <span id="notification-status" aria-live="polite"></span>
     </form>
 </section>
@@ -670,6 +673,7 @@
 </html>
 
 <script src="admin-access.js"></script>
+<script src="admin-pwa.js"></script>
 
 
 
