@@ -43,26 +43,52 @@ async function adminRequest(path, options = {}) {
     return response;
 }
 
-async function loadAdminProducts() {
-    const apiUrl = getApiUrl();
-    // Use the Vercel /api proxy on the live site; use Render directly only for local development.
-
+async function fetchAdminProductList(path, timeoutMs) {
+    const controller = new AbortController();
+    const timeout = setTimeout(function() { controller.abort(); }, timeoutMs || 90000);
     try {
-        const response = await fetch((apiUrl || "") + "/api/products?summary=1&v=" + Date.now());
+        const response = await fetch(path, { cache: "no-store", signal: controller.signal });
         if (!response.ok) throw new Error("Could not load products.");
-        products = await response.json();
-        displayAdminProducts();
-        updateDashboard();
-        // Refresh full image data in the background so the list appears immediately.
-        fetch((apiUrl || "") + "/api/products?v=" + Date.now())
-            .then(function(fullResponse) { if (!fullResponse.ok) throw new Error("Could not load product images."); return fullResponse.json(); })
-            .then(function(fullProducts) { products = fullProducts; displayAdminProducts(); updateDashboard(); })
-            .catch(function(imageError) { console.warn("Product list loaded, but images could not be refreshed.", imageError); });
-    } catch (error) {
-        console.warn("Could not load products from the store server.", error);
+        return await response.json();
+    } finally {
+        clearTimeout(timeout);
     }
 }
 
+async function loadAdminProducts() {
+    const apiUrl = getApiUrl();
+    const base = (apiUrl || "") + "/api/products";
+    try {
+        const summaryProducts = await fetchAdminProductList(base + "?summary=1&v=" + Date.now(), 30000);
+        products = summaryProducts;
+        displayAdminProducts();
+        updateDashboard();
+
+        let fullProducts;
+        try {
+            fullProducts = await fetchAdminProductList(base + "?v=" + Date.now(), 90000);
+        } catch (firstImageError) {
+            await new Promise(function(resolve) { setTimeout(resolve, 1500); });
+            fullProducts = await fetchAdminProductList(base + "?retry=1&v=" + Date.now(), 90000);
+        }
+        if (Array.isArray(fullProducts)) {
+            products = fullProducts;
+            try { saveProducts(fullProducts); } catch (storageError) { console.warn("Products loaded but could not be cached locally.", storageError); }
+            displayAdminProducts();
+            updateDashboard();
+        }
+    } catch (error) {
+        console.warn("Could not load products from the store server.", error);
+        try {
+            const cachedProducts = getProducts();
+            if (Array.isArray(cachedProducts) && cachedProducts.length) {
+                products = cachedProducts;
+                displayAdminProducts();
+                updateDashboard();
+            }
+        } catch (cacheError) { console.warn("Could not load cached products.", cacheError); }
+    }
+}
 
 // The filter currently selected from the dashboard. Keeping this value means
 // a status update refreshes the same view instead of unexpectedly switching
