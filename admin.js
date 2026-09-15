@@ -2402,3 +2402,19 @@ if (adminProductSearch) adminProductSearch.addEventListener("input", displayAdmi
 
 
 
+
+(function setupSidebarToggle() {
+    const toggle = document.getElementById("sidebarToggle");
+    const sidebar = document.querySelector(".admin-sidebar");
+    if (!toggle || !sidebar) return;
+    const saved = localStorage.getItem("rays-admin-sidebar-collapsed") === "1";
+    document.body.classList.toggle("sidebar-collapsed", saved);
+    toggle.setAttribute("aria-expanded", String(!saved));
+    toggle.setAttribute("aria-label", saved ? "Show navigation" : "Hide navigation");
+    toggle.addEventListener("click", function() {
+        const collapsed = document.body.classList.toggle("sidebar-collapsed");
+        localStorage.setItem("rays-admin-sidebar-collapsed", collapsed ? "1" : "0");
+        toggle.setAttribute("aria-expanded", String(!collapsed));
+        toggle.setAttribute("aria-label", collapsed ? "Show navigation" : "Hide navigation");
+    });
+})();

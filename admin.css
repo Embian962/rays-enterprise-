@@ -836,3 +836,11 @@ body.admin-dark h2, body.admin-dark h3, body.admin-dark label { color: #f8fafc; 
 .dashboard-list-row { display: flex; justify-content: space-between; gap: 12px; padding: 9px 0; border-bottom: 1px solid #eef2f7; font-size: 13px; }
 .dashboard-list-row strong { color: #0f766e; white-space: nowrap; }
 .dashboard-list-row small { display: block; color: #94a3b8; font-size: 11px; }
+.sidebar-toggle { position: fixed; left: 244px; top: 78px; z-index: 50; width: 42px; height: 42px; border: 0; border-radius: 50%; background: #1e293b; color: #fff; font-size: 26px; line-height: 1; cursor: pointer; box-shadow: 0 5px 16px rgba(15,23,42,.25); }
+.sidebar-toggle:hover { background: #0f766e; }
+body.sidebar-collapsed { padding-left: 0; }
+body.sidebar-collapsed header { margin-left: 0; padding-left: 6%; }
+body.sidebar-collapsed .admin-sidebar { transform: translateX(-105%); }
+body.sidebar-collapsed .sidebar-toggle { left: 18px; }
+.admin-sidebar { transition: transform .25s ease; }
+@media (max-width: 760px) { .sidebar-toggle { left: auto; right: 16px; top: 76px; } body.sidebar-collapsed .sidebar-toggle { left: auto; right: 16px; } }
