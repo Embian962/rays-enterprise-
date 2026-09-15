@@ -66,10 +66,12 @@ const ensureSharedDataSchema = async () => {
       payment_status TEXT NOT NULL DEFAULT 'Pending',
       status TEXT NOT NULL DEFAULT 'Pending',
       client_request_id TEXT UNIQUE,
-      created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+      created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+      completed_at TIMESTAMPTZ
     )
   `);
   await pool.query("ALTER TABLE orders ADD COLUMN IF NOT EXISTS customer_email TEXT");
+  await pool.query("ALTER TABLE orders ADD COLUMN IF NOT EXISTS completed_at TIMESTAMPTZ");
   await pool.query("ALTER TABLE orders ADD COLUMN IF NOT EXISTS client_request_id TEXT");
   await pool.query("CREATE UNIQUE INDEX IF NOT EXISTS orders_client_request_id_unique ON orders (client_request_id) WHERE client_request_id IS NOT NULL");
   await pool.query(`
@@ -80,7 +82,7 @@ const ensureSharedDataSchema = async () => {
       rating SMALLINT NOT NULL CHECK (rating BETWEEN 1 AND 5),
       comment TEXT NOT NULL,
       client_request_id TEXT UNIQUE,
-      created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+      created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
     )
   `);
   await pool.query("ALTER TABLE reviews ADD COLUMN IF NOT EXISTS client_request_id TEXT");
@@ -90,7 +92,7 @@ const ensureSharedDataSchema = async () => {
       id BIGSERIAL PRIMARY KEY,
       customer_name TEXT NOT NULL,
       message TEXT NOT NULL,
-      created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+      created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
     )
   `);
   await pool.query("CREATE INDEX IF NOT EXISTS orders_created_at_index ON orders (created_at DESC)");
@@ -105,7 +107,7 @@ const ensureSharedDataSchema = async () => {
       notes TEXT,
       total NUMERIC(12, 2) NOT NULL CHECK (total >= 0),
       payment_method TEXT NOT NULL,
-      created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+      created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
     )
   `);
   await pool.query(`
@@ -170,7 +172,8 @@ const serializeOrder = order => ({
   paymentStatus: order.payment_status,
   status: order.status,
   date: formatBusinessDate(order.created_at),
-  createdAt: order.created_at
+  createdAt: order.created_at,
+  completedAt: order.completed_at || null
 });
 
 const serializeReview = review => ({
@@ -462,7 +465,7 @@ app.post("/api/orders", asyncRoute(async (req, res) => {
 app.patch("/api/orders/:id", isAdmin, asyncRoute(async (req, res) => {
   const { status, paymentStatus } = req.body;
   const { rows } = await pool.query(
-    "UPDATE orders SET status=COALESCE($1,status), payment_status=COALESCE($2,payment_status) WHERE id=$3 RETURNING *",
+    "UPDATE orders SET status=COALESCE($1,status), payment_status=COALESCE($2,payment_status), completed_at=CASE WHEN $1 = 'Completed' THEN COALESCE(completed_at, NOW()) WHEN $1 IS NOT NULL AND $1 <> 'Completed' THEN NULL ELSE completed_at END WHERE id=$3 RETURNING *",
     [status, paymentStatus, req.params.id]
   );
   if (!rows[0]) return res.status(404).json({ error: "Order not found." });

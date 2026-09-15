@@ -1827,6 +1827,14 @@ async function refreshCustomerOrderStatuses() {
 // DISPLAY MY ORDERS
 // ==========================================
 
+const CUSTOMER_COMPLETED_ORDER_RETENTION_MS = 24 * 60 * 60 * 1000;
+function isCompletedOrderExpired(order) {
+    const status = String(order && order.status || "").trim().toLowerCase();
+    if (status !== "completed") return false;
+    const completedAt = order.completedAt || order.completed_at || order.updatedAt || order.updated_at || order.createdAt || order.created_at || order.date;
+    const timestamp = new Date(completedAt).getTime();
+    return Number.isFinite(timestamp) && Date.now() - timestamp >= CUSTOMER_COMPLETED_ORDER_RETENTION_MS;
+}
 function displayMyOrders() {
 
     const ordersContainer =
@@ -1841,7 +1849,7 @@ function displayMyOrders() {
 
 
     const orders =
-        getOrders();
+        getOrders().filter(function(order) { return !isCompletedOrderExpired(order); });
 
 
     ordersContainer.innerHTML =
