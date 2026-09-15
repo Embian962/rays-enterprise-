@@ -297,6 +297,28 @@ app.put("/api/products/:id", isAdmin, asyncRoute(async (req, res) => {
   res.json({ ...rows[0], images: normalizeProductImages(rows[0].images, rows[0].image, rows[0].image_url) });
 }));
 
+app.post("/api/admin/migrate-images", isAdmin, asyncRoute(async (req, res) => {
+  const serviceKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
+  const supabaseUrl = String(process.env.SUPABASE_URL || "").replace(/\/$/, "");
+  if (!serviceKey || !supabaseUrl) return res.status(503).json({ error: "Supabase Storage migration is not configured." });
+  const limit = Math.min(Math.max(Number(req.body?.limit) || 10, 1), 25);
+  const { rows } = await pool.query("SELECT id, image, images FROM products WHERE image LIKE 'data:%' ORDER BY id LIMIT $1", [limit]);
+  let migrated = 0;
+  for (const product of rows) {
+    const match = String(product.image).match(/^data:([^;]+);base64,(.+)$/s);
+    if (!match) continue;
+    const mime = match[1];
+    const ext = mime.includes("png") ? "png" : mime.includes("webp") ? "webp" : "jpg";
+    const path = `products/${product.id}-1.${ext}`;
+    const upload = await fetch(`${supabaseUrl}/storage/v1/object/product-images/${path}`, { method: "POST", headers: { apikey: serviceKey, Authorization: `Bearer ${serviceKey}`, "Content-Type": mime, "x-upsert": "true" }, body: Buffer.from(match[2], "base64") });
+    if (!upload.ok) throw new Error(`Storage upload failed for product ${product.id}: ${await upload.text()}`);
+    const publicUrl = `${supabaseUrl}/storage/v1/object/public/product-images/${path}`;
+    await pool.query("UPDATE products SET image=$1, images=$2, updated_at=NOW() WHERE id=$3", [publicUrl, JSON.stringify([publicUrl]), product.id]);
+    migrated++;
+  }
+  const remaining = await pool.query("SELECT COUNT(*)::int AS count FROM products WHERE image LIKE 'data:%'");
+  res.json({ migrated, remaining: remaining.rows[0].count });
+}));
 app.delete("/api/products/:id", isAdmin, asyncRoute(async (req, res) => {
   const result = await pool.query("DELETE FROM products WHERE id=$1", [req.params.id]);
   if (!result.rowCount) return res.status(404).json({ error: "Product not found." });
@@ -454,6 +476,7 @@ app.use((error, _req, res, _next) => {
 await ensureProductSchema();
 await ensureSharedDataSchema();
 app.listen(port, () => console.log(`Ray's Enterprise API listening on port ${port}`));
+
 
 
 
