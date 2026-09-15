@@ -854,3 +854,9 @@ main > section:not([hidden]) { width: 100%; }
 .inventory-status { font-weight: 700; font-size: 13px; }
 .inventory-available { color: #15803d; }.inventory-low-stock { color: #b45309; }.inventory-out-of-stock { color: #b91c1c; }
 .offline-sale-status { min-height: 22px; color: #b45309; font-weight: 600; }
+.dashboard-sale-row { width: 100%; border: 0; background: transparent; text-align: left; cursor: pointer; font: inherit; }
+.dashboard-sale-row:hover { background: #f0fdfa; }
+.sale-details-modal { position: fixed; inset: 0; z-index: 100; display: grid; place-items: center; padding: 20px; background: rgba(15,23,42,.55); }
+.sale-details-card { position: relative; width: min(560px, 100%); background: #fff; border-radius: 16px; padding: 28px; box-shadow: 0 20px 60px rgba(0,0,0,.25); }
+.sale-details-card p { margin: 10px 0; }.sale-details-card a { color: #0f766e; font-weight: 700; }
+.sale-details-close { margin-top: 18px; padding: 10px 18px; border: 0; border-radius: 8px; cursor: pointer; }

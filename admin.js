@@ -936,6 +936,16 @@ function deleteOrder(index) {
 // DASHBOARD STATISTICS
 // ==========================================
 
+function showSaleDetails(item) {
+    const existing = document.getElementById("sale-details-modal"); if (existing) existing.remove();
+    const modal = document.createElement("div"); modal.id = "sale-details-modal"; modal.className = "sale-details-modal";
+    const source = item.label === "Offline sale" ? offlineSalesCache : sharedOrders;
+    const record = source.find(function(entry) { return item.label === "Offline sale" ? Number(entry.id) === Number(item.id) : Number(entry.id) === Number(item.id); });
+    const customer = record ? (record.customer_name || record.customerName || "Not provided") : "Not available";
+    const phone = record ? (record.customer_phone || record.customerPhone || "") : "";
+    modal.innerHTML = `<div class="sale-details-card"><button type="button" class="panel-close-button" aria-label="Close sale details">×</button><h2>${item.label}</h2><p><strong>Date:</strong> ${new Date(item.date).toLocaleString()}</p><p><strong>Total:</strong> KSh ${item.total.toLocaleString()}</p><p><strong>Customer:</strong> ${customer}</p>${phone ? `<p><strong>Phone:</strong> <a href="tel:${phone}">${phone}</a> &nbsp; <a href="https://wa.me/${phone.replace(/\D/g, "")}" target="_blank" rel="noopener">WhatsApp</a></p>` : ""}<button type="button" class="sale-details-close">Close</button></div>`;
+    document.body.appendChild(modal); modal.querySelector(".panel-close-button").addEventListener("click", function() { modal.remove(); }); modal.querySelector(".sale-details-close").addEventListener("click", function() { modal.remove(); });
+}
 let offlineSalesCache = [];
 let dashboardDetailsRequest = null;
 async function refreshDashboardDetails() {
@@ -948,8 +958,8 @@ async function refreshDashboardDetails() {
     if (!adminToken || dashboardDetailsRequest) return dashboardDetailsRequest;
     dashboardDetailsRequest = adminRequest("/api/offline-sales").then(function(response) { return response ? response.json() : []; }).then(function(sales) {
         offlineSalesCache = Array.isArray(sales) ? sales : [];
-        const activity = sharedOrders.map(function(order) { return { date: order.createdAt || order.created_at, label: "Online order", total: Number(order.total) || 0 }; }).concat(offlineSalesCache.map(function(sale) { return { date: sale.created_at, label: "Offline sale", total: Number(sale.total) || 0 }; })).sort(function(a,b) { return new Date(b.date) - new Date(a.date); }).slice(0, 6);
-        if (recent) recent.innerHTML = activity.length ? activity.map(function(item) { return `<div class="dashboard-list-row"><span>${item.label}<small>${new Date(item.date).toLocaleString()}</small></span><strong>KSh ${item.total.toLocaleString()}</strong></div>`; }).join("") : "<p>No sales recorded yet.</p>";
+        const activity = sharedOrders.map(function(order) { return { id: order.id, date: order.createdAt || order.created_at, label: "Online order", total: Number(order.total) || 0 }; }).concat(offlineSalesCache.map(function(sale) { return { id: sale.id, date: sale.created_at, label: "Offline sale", total: Number(sale.total) || 0 }; })).sort(function(a,b) { return new Date(b.date) - new Date(a.date); }).slice(0, 6);
+        if (recent) { recent.innerHTML = activity.length ? activity.map(function(item, itemIndex) { return `<button type="button" class="dashboard-list-row dashboard-sale-row" data-sale-type="${item.label === "Offline sale" ? "offline" : "online"}" data-sale-index="${itemIndex}"><span>${item.label}<small>${new Date(item.date).toLocaleString()}</small></span><strong>KSh ${item.total.toLocaleString()}</strong></button>`; }).join("") : "<p>No sales recorded yet.</p>"; recent.querySelectorAll(".dashboard-sale-row").forEach(function(row) { row.addEventListener("click", function() { const item = activity[Number(row.dataset.saleIndex)]; if (item) showSaleDetails(item); }); }); }
     }).catch(function() { if (recent) recent.innerHTML = "<p>Sales activity unavailable.</p>"; }).finally(function() { dashboardDetailsRequest = null; });
     return dashboardDetailsRequest;
 }
@@ -2437,6 +2447,7 @@ if (adminProductSearch) adminProductSearch.addEventListener("input", displayAdmi
     setInterval(render, 5000);
     window.renderInventory = render;
 })();
+
 
 
 
