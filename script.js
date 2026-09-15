@@ -13,8 +13,10 @@
     const createAccount = document.getElementById("account-page-create");
     const signOut = document.getElementById("account-page-sign-out");
     if (!accountButton || !page) return;
-    const client = window.supabase && window.RAYS_SUPABASE_URL && window.RAYS_SUPABASE_ANON_KEY
-        ? window.supabase.createClient(window.RAYS_SUPABASE_URL, window.RAYS_SUPABASE_ANON_KEY)
+    const supabaseUrl = window.RAYS_SUPABASE_URL || "https://tayhupalvkpxdnldyngl.supabase.co";
+    const supabaseAnonKey = window.RAYS_SUPABASE_ANON_KEY || "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InRheWh1cGFsdmtweGRubGR5bmdsIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODU5NjgwMzAsImV4cCI6MjEwMTU0NDAzMH0.Jh2fFqku86_5WVbwYB4u4nxoNcKolGD19nsME-D9CA";
+    const client = window.supabase && supabaseUrl && supabaseAnonKey
+        ? window.supabase.createClient(supabaseUrl, supabaseAnonKey)
         : null;
     let session = null;
     const update = function(nextSession) {
