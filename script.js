@@ -1011,6 +1011,67 @@ if (searchInput) {
 // LOAD PRODUCTS
 // ==========================================
 
+function escapeProductHtml(value) {
+    return String(value == null ? "" : value)
+        .replace(/&/g, "&amp;")
+        .replace(/</g, "&lt;")
+        .replace(/>/g, "&gt;")
+        .replace(/"/g, "&quot;")
+        .replace(/'/g, "&#39;");
+}
+
+function openProductDetails(product) {
+    const images = getProductImages(product);
+    const price = Number(product.price) || 0;
+    const colors = Array.isArray(product.colors) ? product.colors : [];
+    let panel = document.getElementById("product-details-modal");
+    if (!panel) {
+        panel = document.createElement("div");
+        panel.id = "product-details-modal";
+        panel.className = "product-details-modal";
+        document.body.appendChild(panel);
+    }
+    const mainImage = images[0] || "rays-enterprise-catalog-logo.jpg";
+    panel.innerHTML = `
+        <div class="product-details-dialog" role="dialog" aria-modal="true" aria-labelledby="product-details-title">
+            <button type="button" class="product-details-close" aria-label="Close product details">×</button>
+            <div class="product-details-gallery">
+                <img class="product-details-main-image" src="${escapeProductHtml(mainImage)}" alt="${escapeProductHtml(product.name)}" decoding="async">
+                <div class="product-details-thumbnails">
+                    ${images.map(function(image, index) { return `<button type="button" class="product-details-thumb${index === 0 ? " is-active" : ""}" data-image-index="${index}" aria-label="Show image ${index + 1}"><img src="${escapeProductHtml(image)}" alt=""></button>`; }).join("")}
+                </div>
+            </div>
+            <div class="product-details-content">
+                <span class="product-category">${escapeProductHtml(product.category || "Home essentials")}</span>
+                <h2 id="product-details-title">${escapeProductHtml(product.name)}</h2>
+                <p class="product-details-price">KSh ${price.toLocaleString()}</p>
+                <p class="product-details-description">${escapeProductHtml(product.description || "A quality home essential selected by Ray's Enterprise.")}</p>
+                ${colors.length ? `<label class="product-colour-label">Colour<select class="product-details-colour-select">${colors.map(function(color) { return `<option>${escapeProductHtml(color)}</option>`; }).join("")}</select></label>` : ""}
+                <button type="button" class="add-to-cart-button product-details-add">Add to Cart</button>
+                <button type="button" class="save-to-list-button product-details-save">Save to My List</button>
+            </div>
+        </div>`;
+    panel.classList.add("is-open");
+    document.body.classList.add("product-details-open");
+    const close = function() { panel.classList.remove("is-open"); document.body.classList.remove("product-details-open"); };
+    panel.querySelector(".product-details-close").addEventListener("click", close);
+    panel.addEventListener("click", function(event) { if (event.target === panel) close(); }, { once: true });
+    const main = panel.querySelector(".product-details-main-image");
+    panel.querySelectorAll(".product-details-thumb").forEach(function(button) {
+        button.addEventListener("click", function() {
+            const image = images[Number(button.dataset.imageIndex)] || mainImage;
+            main.src = image; main.alt = product.name;
+            panel.querySelectorAll(".product-details-thumb").forEach(function(item) { item.classList.remove("is-active"); });
+            button.classList.add("is-active");
+        });
+    });
+    const colour = panel.querySelector(".product-details-colour-select");
+    panel.querySelector(".product-details-add").addEventListener("click", function(event) {
+        if (addToCart(product.name, colour ? colour.value : "")) showAddToCartSuccess(event.currentTarget);
+    });
+    panel.querySelector(".product-details-save").addEventListener("click", function() { addToMyList(product.name); });
+    panel.querySelector(".product-details-close").focus();
+}
 function openProductImage(imageUrl, productName) {
     let lightbox = document.getElementById("product-lightbox");
     if (!lightbox) {
@@ -1034,6 +1095,7 @@ function openProductImage(imageUrl, productName) {
 document.addEventListener("keydown", function(event) {
     const lightbox = document.getElementById("product-lightbox");
     if (event.key === "Escape" && lightbox) lightbox.classList.remove("is-open");
+    if (event.key === "Escape") { const details = document.getElementById("product-details-modal"); if (details) { details.classList.remove("is-open"); document.body.classList.remove("product-details-open"); } }
 });
 function getProductImages(product) {
     const images = Array.isArray(product && product.images) ? product.images : [];
@@ -1166,7 +1228,7 @@ async function loadProducts() {
         productCard.innerHTML = `
 
             <div class="product-image-container product-gallery">
-                <img class="product-gallery-main" src="${getProductImages(product)[0] || "rays-enterprise-catalog-logo.jpg"}" alt="${product.name}" loading="lazy" decoding="async">
+                <img class="product-gallery-main" src="${getProductImages(product)[0] || "rays-enterprise-catalog-logo.jpg"}" alt="${product.name}" loading="${productIndex < 4 ? "eager" : "lazy"}" fetchpriority="${productIndex < 2 ? "high" : "auto"}" decoding="async">
                 ${getProductImages(product).length > 1 ? `
                     <button type="button" class="gallery-nav gallery-prev" aria-label="Previous image">‹</button>
                     <button type="button" class="gallery-nav gallery-next" aria-label="Next image">›</button>
@@ -1231,6 +1293,15 @@ async function loadProducts() {
         `;
 
 
+        const productHeading = productCard.querySelector("h3");
+        if (productHeading) {
+            productHeading.tabIndex = 0;
+            productHeading.setAttribute("role", "button");
+            productHeading.setAttribute("aria-label", "View details for " + product.name);
+            productHeading.addEventListener("click", function() { openProductDetails(product); });
+            productHeading.addEventListener("keydown", function(event) { if (event.key === "Enter" || event.key === " ") openProductDetails(product); });
+        }
+
         const galleryImages = getProductImages(product);
         const productImage = productCard.querySelector(".product-gallery-main");
         let galleryIndex = 0;
@@ -1243,7 +1314,7 @@ async function loadProducts() {
         };
         if (productImage) {
             productImage.tabIndex = 0; productImage.setAttribute("role", "button");
-            productImage.addEventListener("click", function() { openProductImage(galleryImages[galleryIndex] || "rays-enterprise-catalog-logo.jpg", product.name); });
+            productImage.addEventListener("click", function() { openProductDetails(product); });
             productImage.addEventListener("keydown", function(event) { if (event.key === "Enter" || event.key === " ") openProductImage(galleryImages[galleryIndex] || "rays-enterprise-catalog-logo.jpg", product.name); });
         }
         productCard.querySelector(".gallery-prev")?.addEventListener("click", function(event) { event.stopPropagation(); updateGallery(galleryIndex - 1); });
