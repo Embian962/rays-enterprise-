@@ -15,7 +15,7 @@
 
     <link
         rel="stylesheet"
-        href="admin.css?v=20260915-sales-history"
+        href="admin.css?v=20260915-dashboard"
     >
 
 </head>
@@ -58,7 +58,7 @@
 </section>
 
 
-<aside class="admin-sidebar" aria-label="Admin navigation"><div class="sidebar-brand">Rays Enterprise</div><nav><a href="#admin-dashboard">Dashboard</a><a href="#products-panel">Products</a><a href="#offline-sale-section">Offline Sales</a><a href="#orders-panel">Online Orders</a><a href="#admin-dashboard">Sales Reports</a><a href="#feedback-inbox">Customers & Feedback</a><a href="#admin-login">Settings</a></nav></aside>
+<aside class="admin-sidebar" aria-label="Admin navigation"><div class="sidebar-brand">Rays Enterprise</div><nav><a href="#admin-dashboard">Dashboard</a><a href="#products-panel">Products</a><a href="#offline-sale-section">Offline Sales</a><a href="#orders-panel">Online Orders</a><a href="#sales-reports">Sales Reports</a><a href="#inventory-panel">Inventory</a><a href="#feedback-inbox">Customers</a><a href="#feedback-inbox">Feedback</a><a href="#admin-settings">Settings</a></nav></aside>
 
 <main>
         <section class="admin-welcome" id="admin-welcome"><img src="rays-enterprise-logo-new.jpg" alt="Rays Enterprise logo"><h2>Welcome back, Manager</h2><p>Select a section from the sidebar to get started.</p></section>
@@ -208,6 +208,11 @@
 
 
 
+        <section class="dashboard-detail-grid" id="dashboard-details">
+            <article class="dashboard-detail-card"><h3>Sales overview</h3><div class="sales-overview-bars"><span style="height:35%"></span><span style="height:58%"></span><span style="height:44%"></span><span style="height:78%"></span><span style="height:64%"></span><span style="height:88%"></span><span style="height:72%"></span></div><p>Online and offline sales performance</p></article>
+            <article class="dashboard-detail-card" id="inventory-panel"><h3>Low-stock products</h3><div id="low-stock-list"><p>Stock alerts will appear here.</p></div></article>
+            <article class="dashboard-detail-card" id="sales-reports"><h3>Recent online/offline sales</h3><div id="recent-sales-list"><p>Recent activity will appear here.</p></div></article>
+        </section>
         <!-- OFFLINE SALES -->
         <button type="button" id="openOfflineSaleButton" class="admin-primary-action">Record Offline Sale</button>
         <section class="admin-section offline-sale-panel" id="offline-sale-section" hidden>
@@ -630,7 +635,7 @@
     ========================== -->
 
     <script src="api-config.js"></script>
-    <script src="admin.js?v=20260915-sales-history"></script>
+    <script src="admin.js?v=20260915-dashboard"></script>
 
 
 </body>
@@ -638,6 +643,8 @@
 </html>
 
 <script src="admin-access.js"></script>
+
+
 
 
 
