@@ -2323,6 +2323,9 @@ if (adminProductSearch) adminProductSearch.addEventListener("input", displayAdmi
     const section = document.getElementById("offline-sale-section");
     const form = document.getElementById("offlineSaleForm");
     const select = document.getElementById("offlineSaleProduct");
+    const chooseButton = document.getElementById("chooseProductButton");
+    const picker = document.getElementById("offlineProductPicker");
+    const productList = document.getElementById("offlineProductList");
     const search = document.getElementById("offlineSaleSearch");
     const qty = document.getElementById("offlineSaleQuantity");
     const price = document.getElementById("offlineSalePrice");
@@ -2331,10 +2334,12 @@ if (adminProductSearch) adminProductSearch.addEventListener("input", displayAdmi
     const populate = function() {
         const term = (search?.value || "").toLowerCase().trim();
         const matches = products.filter(function(product) { return !term || String(product.name || "").toLowerCase().includes(term) || String(product.id || "").includes(term); });
-        select.innerHTML = '<option value="">Choose a product</option>' + matches.map(function(product) { return `<option value="${product.id}" data-price="${Number(product.price) || 0}">${product.name} — KSh ${Number(product.price || 0).toLocaleString()}</option>`; }).join("");
+        productList.innerHTML = matches.map(function(product) { return `<button type="button" class="offline-product-option" data-id="${product.id}" data-price="${Number(product.price) || 0}">${product.name} <span>— KSh ${Number(product.price || 0).toLocaleString()}</span></button>`; }).join("") || '<p class="offline-product-empty">No matching products</p>';
+        productList.querySelectorAll(".offline-product-option").forEach(function(option) { option.addEventListener("click", function() { select.value = option.dataset.id; chooseButton.textContent = option.textContent; price.value = option.dataset.price; picker.hidden = true; updateTotal(); }); });
     };
     const updateTotal = function() { total.textContent = (Math.max(0, Number(qty.value) || 0) * Math.max(0, Number(price.value) || 0)).toLocaleString(); };
     open.addEventListener("click", function() { populate(); section.hidden = false; section.scrollIntoView({ behavior: "smooth", block: "start" }); });
+    chooseButton?.addEventListener("click", function() { populate(); picker.hidden = !picker.hidden; if (!picker.hidden) search?.focus(); });
     document.getElementById("cancelOfflineSaleButton")?.addEventListener("click", function() { form.reset(); section.hidden = true; });
     document.getElementById("closeOfflineSaleTop")?.addEventListener("click", function() { form.reset(); section.hidden = true; });
     search?.addEventListener("input", populate);
@@ -2353,5 +2358,6 @@ if (adminProductSearch) adminProductSearch.addEventListener("input", displayAdmi
         } catch (error) { alert(error.message); } finally { if (button) button.disabled = false; }
     });
 })();
+
 
 

@@ -15,7 +15,7 @@
 
     <link
         rel="stylesheet"
-        href="admin.css?v=20260915-admin-layout"
+        href="admin.css?v=20260915-product-picker"
     >
 
 </head>
@@ -211,7 +211,7 @@
             <button type="button" id="closeOfflineSaleTop" class="panel-close-button" aria-label="Close offline sale">×</button>
             <h2>Record Offline Sale</h2>
             <form id="offlineSaleForm">
-                <label for="offlineSaleSearch">Find product</label><input type="search" id="offlineSaleSearch" placeholder="Search by product name or ID" autocomplete="off"><label for="offlineSaleProduct">Product</label><select id="offlineSaleProduct" required></select>
+                <label for="chooseProductButton">Product</label><button type="button" id="chooseProductButton" class="choose-product-button">Choose a product</button><div id="offlineProductPicker" class="offline-product-picker" hidden><div id="offlineProductList" class="offline-product-list"></div><label for="offlineSaleSearch">Search products</label><input type="search" id="offlineSaleSearch" placeholder="Search by product name or ID" autocomplete="off"></div><select id="offlineSaleProduct" required hidden></select>
                 <label for="offlineSaleQuantity">Quantity sold</label><input type="number" id="offlineSaleQuantity" min="1" value="1" required>
                 <label for="offlineSalePrice">Selling price per item (KSh)</label><input type="number" id="offlineSalePrice" min="0" step="0.01" required>
                 <label for="offlineSalePayment">Payment method</label><select id="offlineSalePayment"><option>Cash</option><option>M-Pesa</option><option>Card</option><option>Other</option></select>
@@ -620,7 +620,7 @@
     ========================== -->
 
     <script src="api-config.js"></script>
-    <script src="admin.js?v=20260915-admin-layout"></script>
+    <script src="admin.js?v=20260915-product-picker"></script>
 
 
 </body>
@@ -628,6 +628,8 @@
 </html>
 
 <script src="admin-access.js"></script>
+
+
 
 
 

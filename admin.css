@@ -782,3 +782,10 @@ body.edit-editor-open::after { display: none !important; }
 .offline-sale-panel { position: relative; }
 .panel-close-button { position: absolute; top: 14px; right: 18px; border: 0; background: transparent; color: #64748b; font-size: 30px; line-height: 1; cursor: pointer; }
 .panel-close-button:hover { color: #111827; }
+.choose-product-button { width: 100%; text-align: left; background: #fff; border: 1px solid #cbd5e1; border-radius: 8px; padding: 13px 15px; font-size: 16px; cursor: pointer; }
+.offline-product-picker { margin-top: 6px; border: 1px solid #cbd5e1; border-radius: 8px; background: #fff; padding: 8px; }
+.offline-product-list { max-height: 280px; overflow-y: auto; }
+.offline-product-option { display: block; width: 100%; border: 0; border-bottom: 1px solid #eef2f7; background: #fff; padding: 10px; text-align: left; cursor: pointer; font-size: 15px; }
+.offline-product-option:hover { background: #eef7f6; }
+.offline-product-option span { color: #64748b; }
+.offline-product-empty { padding: 12px; color: #64748b; }
