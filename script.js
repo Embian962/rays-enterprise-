@@ -2609,7 +2609,7 @@ document.addEventListener("click", function(event) {
     };
     toggle.addEventListener("click", function() { setOpen(!document.body.classList.contains("customer-sidebar-open")); });
     closeButton.addEventListener("click", function() { setOpen(false); });
-    sidebar.addEventListener("click", function(event) { if (event.target.closest("a")) setOpen(false); });
+    sidebar.addEventListener("click", function(event) { if (event.target.closest("a") || event.target.closest("#customer-categories-toggle")) setOpen(false); });
     document.addEventListener("keydown", function(event) { if (event.key === "Escape") setOpen(false); });
     document.addEventListener("click", function(event) { if (document.body.classList.contains("customer-sidebar-open") && !sidebar.contains(event.target) && !toggle.contains(event.target)) setOpen(false); });
 })();
@@ -2619,7 +2619,7 @@ document.addEventListener("click", function(event) {
     const panel = document.querySelector(".categories");
     if (!toggle || !panel) return;
     const close = function() { document.body.classList.remove("categories-drawer-open"); toggle.setAttribute("aria-expanded", "false"); };
-    toggle.addEventListener("click", function() { const open = !document.body.classList.contains("categories-drawer-open"); document.body.classList.toggle("categories-drawer-open", open); toggle.setAttribute("aria-expanded", String(open)); });
+    toggle.addEventListener("click", function() { const products = document.getElementById("products"); if (typeof hideAllSections === "function") hideAllSections(); if (products) products.style.display = "block"; const open = !document.body.classList.contains("categories-drawer-open"); document.body.classList.toggle("categories-drawer-open", open); toggle.setAttribute("aria-expanded", String(open)); });
     panel.addEventListener("click", function(event) { if (event.target.closest("button")) close(); });
     document.addEventListener("keydown", function(event) { if (event.key === "Escape") close(); });
 })();

@@ -2262,6 +2262,9 @@ body.trust-panel-open::after { content: ""; position: fixed; inset: 0; z-index: 
 @keyframes trust-slide-in { from { transform: translateX(100%); } to { transform: translateX(0); } }
 body.dark-mode .customer-trust-section:not([hidden]) { background: #162b2c; }
 
+/* Categories are opened separately from the Products tab. */
+.products-section > .categories { display: none; }
+
 /* Customer category drawer */
 .customer-categories-toggle { border: 0; background: transparent; color: inherit; font: inherit; cursor: pointer; }
 .categories-drawer-open::after { content: ""; position: fixed; inset: 0; z-index: 1090; background: rgba(9,24,25,.42); }
