@@ -292,25 +292,9 @@ function showProducts(event) {
         document.getElementById("products");
 
 
-    const cartSection =
-        document.getElementById("cart");
-
-
     if (products) {
 
         products.style.display = "block";
-
-    }
-
-
-    if (cartSection) {
-
-        cartSection.style.display = "block";
-
-    }
-
-
-    if (products) {
 
         products.scrollIntoView({
             behavior: "smooth"
@@ -2603,6 +2587,22 @@ document.addEventListener("click", function(event) {
     close.addEventListener("click", function() { setOpen(false); });
 })();
 
+// Customer mobile sidebar navigation
+(function setupCustomerSidebar() {
+    const toggle = document.getElementById("customer-menu-toggle");
+    const sidebar = document.getElementById("customer-sidebar");
+    const closeButton = document.getElementById("customer-sidebar-close");
+    if (!toggle || !sidebar || !closeButton) return;
+    const setOpen = function(open) {
+        document.body.classList.toggle("customer-sidebar-open", open);
+        toggle.setAttribute("aria-expanded", String(open));
+    };
+    toggle.addEventListener("click", function() { setOpen(!document.body.classList.contains("customer-sidebar-open")); });
+    closeButton.addEventListener("click", function() { setOpen(false); });
+    sidebar.addEventListener("click", function(event) { if (event.target.closest("a")) setOpen(false); });
+    document.addEventListener("keydown", function(event) { if (event.key === "Escape") setOpen(false); });
+    document.addEventListener("click", function(event) { if (document.body.classList.contains("customer-sidebar-open") && !sidebar.contains(event.target) && !toggle.contains(event.target)) setOpen(false); });
+})();
 // Customer categories drawer
 (function setupCategoriesDrawer() {
     const toggle = document.getElementById("customer-categories-toggle");

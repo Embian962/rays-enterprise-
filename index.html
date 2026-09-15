@@ -34,7 +34,7 @@
     }
     </script>
 
-    <link rel="stylesheet" href="style.css?v=20260915-catalog-mobile">
+    <link rel="stylesheet" href="style.css?v=20260915-sidebar">
 </head>
 
 <body>
@@ -47,6 +47,22 @@
     >
     <h1>Ray's Enterprise</h1>
     <p>Your Home Essentials Store</p>
+    <div class="customer-top-actions">
+        <button type="button" id="customer-menu-toggle" class="customer-menu-toggle" aria-expanded="false" aria-controls="customer-sidebar" aria-label="Open menu">☰</button>
+        <a href="#cart" onclick="showCart(event)">
+        <span class="cart-icon" aria-hidden="true">🛒</span> Cart (<span id="top-cart-item-count">0</span>)
+    </a>
+        <div class="account-menu-wrap">
+        <button type="button" id="customer-auth-button" class="customer-auth-button" aria-expanded="false">Account</button>
+        <div id="customer-account-menu" class="customer-account-menu" hidden>
+            <p id="customer-account-status" class="customer-account-status">Welcome</p>
+            <button type="button" id="customer-sign-in" class="account-menu-action">Sign in with Google</button>
+            <button type="button" id="customer-create-account" class="account-menu-action">Create account</button>
+            <button type="button" id="customer-sign-out" class="account-menu-action" hidden>Sign out</button>
+        </div>
+    </div>
+    </div>
+
 </header>
 
 
@@ -88,7 +104,8 @@
      NAVIGATION
 ========================================== -->
 
-<nav>
+<nav id="customer-sidebar">
+    <button type="button" id="customer-sidebar-close" class="customer-sidebar-close" aria-label="Close menu">×</button>
 
     <button type="button" id="customer-categories-toggle" class="customer-categories-toggle" aria-expanded="false">Categories</button>
 
@@ -96,9 +113,6 @@
         Products
     </a>
 
-    <a href="#cart" onclick="showCart(event)">
-        <span class="cart-icon" aria-hidden="true">🛒</span> Cart (<span id="top-cart-item-count">0</span>)
-    </a>
 
     <a href="#my-list" onclick="showMyList(event)">
         My List (<span id="my-list-count">0</span>)
@@ -121,16 +135,6 @@
     <a href="#reviews">
         Reviews
     </a>
-
-        <div class="account-menu-wrap">
-        <button type="button" id="customer-auth-button" class="customer-auth-button" aria-expanded="false">Account</button>
-        <div id="customer-account-menu" class="customer-account-menu" hidden>
-            <p id="customer-account-status" class="customer-account-status">Welcome</p>
-            <button type="button" id="customer-sign-in" class="account-menu-action">Sign in with Google</button>
-            <button type="button" id="customer-create-account" class="account-menu-action">Create account</button>
-            <button type="button" id="customer-sign-out" class="account-menu-action" hidden>Sign out</button>
-        </div>
-    </div>
 
 <button type="button" id="theme-toggle" class="theme-toggle" aria-label="Switch to dark mode">
         Dark mode
@@ -837,7 +841,7 @@
 
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script src="api-config.js?v=20260901-2"></script>
-<script src="script.js?v=20260915-gallery"></script>
+<script src="script.js?v=20260915-sidebar"></script>
 
 </body>
 
