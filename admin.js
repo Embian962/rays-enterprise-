@@ -101,6 +101,7 @@ const adminLogoutButton = document.getElementById("adminLogoutButton");
 const adminLoginSection = document.getElementById("admin-login");
 
 function updateAdminLoginStatus() {
+    syncAdminChrome();
     if (adminLoginStatus) adminLoginStatus.textContent = adminToken ? "Signed in" : "Sign in to add, edit, or delete products.";
     if (adminLogoutButton) adminLogoutButton.style.display = adminToken ? "inline-block" : "none";
     if (adminLoginSection) {
