@@ -10,6 +10,7 @@
 let products = [];
 
 let adminToken = sessionStorage.getItem("rays-admin-token") || "";
+function syncAdminChrome() { document.body.classList.toggle("admin-signed-in", Boolean(adminToken)); }
 
 function getApiUrl() {
     return (window.RAYS_API_URL || "").replace(/\/$/, "");
@@ -2421,6 +2422,7 @@ if (adminProductSearch) adminProductSearch.addEventListener("input", displayAdmi
     const toggle = document.getElementById("sidebarToggle");
     const sidebar = document.querySelector(".admin-sidebar");
     if (!toggle || !sidebar) return;
+    syncAdminChrome();
     const saved = localStorage.getItem("rays-admin-sidebar-collapsed") === "1";
     document.body.classList.toggle("sidebar-collapsed", saved);
     toggle.setAttribute("aria-expanded", String(!saved));
@@ -2448,6 +2450,7 @@ if (adminProductSearch) adminProductSearch.addEventListener("input", displayAdmi
     setInterval(render, 5000);
     window.renderInventory = render;
 })();
+
 
 
 

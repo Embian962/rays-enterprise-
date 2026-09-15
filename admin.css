@@ -860,3 +860,5 @@ main > section:not([hidden]) { width: 100%; }
 .sale-details-card { position: relative; width: min(560px, 100%); background: #fff; border-radius: 16px; padding: 28px; box-shadow: 0 20px 60px rgba(0,0,0,.25); }
 .sale-details-card p { margin: 10px 0; }.sale-details-card a { color: #0f766e; font-weight: 700; }
 .sale-details-close { margin-top: 18px; padding: 10px 18px; border: 0; border-radius: 8px; cursor: pointer; }
+body:not(.admin-signed-in) .admin-sidebar, body:not(.admin-signed-in) .sidebar-toggle { display: none !important; }
+body:not(.admin-signed-in) main { margin-top: 30px; }
