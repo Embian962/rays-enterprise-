@@ -52,6 +52,11 @@ async function loadAdminProducts() {
         products = await response.json();
         displayAdminProducts();
         updateDashboard();
+        // Refresh full image data in the background so the list appears immediately.
+        fetch((apiUrl || "") + "/api/products?v=" + Date.now())
+            .then(function(fullResponse) { if (!fullResponse.ok) throw new Error("Could not load product images."); return fullResponse.json(); })
+            .then(function(fullProducts) { products = fullProducts; displayAdminProducts(); updateDashboard(); })
+            .catch(function(imageError) { console.warn("Product list loaded, but images could not be refreshed.", imageError); });
     } catch (error) {
         console.warn("Could not load products from the store server.", error);
     }
@@ -2292,6 +2297,7 @@ document.getElementById("cancelImageButton")?.addEventListener("click", function
 
 const adminProductSearch = document.getElementById("admin-product-search");
 if (adminProductSearch) adminProductSearch.addEventListener("input", displayAdminProducts);
+
 
 
 
