@@ -2316,7 +2316,7 @@ if (imageForm) imageForm.addEventListener("submit", async function(event) {
     if (!product || !files.length || !validateImageFiles(files)) return;
     try {
         const newImages = await readImageFiles(files);
-        const images = [...new Set([...getProductImages(product), ...newImages])];
+        const images = [...new Set([...imageDraft, ...newImages])];
         const response = await adminRequest("/api/products/" + product.id, { method: "PUT", body: JSON.stringify({ ...product, image: images[0] || "", images }) });
         if (!response) return;
         products[index] = await response.json();
@@ -2459,6 +2459,7 @@ if (adminProductSearch) adminProductSearch.addEventListener("input", displayAdmi
     setInterval(render, 5000);
     window.renderInventory = render;
 })();
+
 
 
 
