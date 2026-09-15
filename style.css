@@ -2312,3 +2312,39 @@ body.trust-panel-open::after { pointer-events: auto; }
 .gallery-dots { position: absolute; left: 0; right: 0; bottom: 8px; display: flex; justify-content: center; gap: 5px; z-index: 2; }
 .gallery-dot { width: 8px; height: 8px; padding: 0; border: 1px solid #fff; border-radius: 50%; background: rgba(255,255,255,.65); cursor: pointer; }
 .gallery-dot.is-active { background: #0b4f4a; transform: scale(1.2); }
+
+/* Mobile-first customer catalog layout */
+@media (max-width: 700px) {
+    header {
+        display: grid;
+        grid-template-columns: 46px 1fr;
+        align-items: center;
+        gap: 10px;
+        padding: 12px 16px;
+        text-align: left;
+    }
+    header .catalog-logo { width: 46px; height: 46px; margin: 0; border-radius: 12px; }
+    header h1 { font-size: 1.15rem; }
+    header p { grid-column: 2; margin-top: -6px; font-size: .78rem; }
+    .contact-bar { display: none; }
+    nav { top: 0; z-index: 1000; gap: 8px; padding: 9px 12px; overflow-x: auto; white-space: nowrap; }
+    nav > a, nav > button, nav .account-menu-wrap { font-size: .8rem; }
+    nav .theme-toggle { display: none; }
+    main { width: 100%; }
+    .welcome-section { display: none; }
+    .products-section { width: 100%; margin: 0; padding: 18px 12px 88px; border: 0; border-radius: 0; box-shadow: none; }
+    .products-section > h2 { margin: 0 2px 14px; font-size: 1.35rem; }
+    .search-box { margin: 0 0 14px; gap: 8px; }
+    .search-box input { min-width: 0; padding: 11px 13px; font-size: .92rem; }
+    .search-submit { padding: 0 13px; }
+    .categories { justify-content: flex-start; flex-wrap: nowrap; margin: 0 -12px 16px; padding: 0 12px 4px; overflow-x: auto; }
+    .categories button { flex: 0 0 auto; padding: 8px 12px; font-size: .78rem; }
+    .products { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px; margin-top: 0; }
+    .product-card { border-radius: 12px; box-shadow: 0 3px 12px rgba(16,42,42,.07); }
+    .product-image-container { aspect-ratio: 1 / 1; }
+    .product-info { padding: 10px; }
+    .product-category { font-size: .66rem; }
+    .product-card h3 { margin: 7px 0 2px; font-size: .88rem; line-height: 1.25; }
+    .product-price { font-size: .98rem; }
+    .product-card .add-to-cart-button, .save-to-list-button { min-height: 40px; padding: 8px 6px; font-size: .78rem; }
+}
