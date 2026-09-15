@@ -2401,7 +2401,7 @@ if (adminProductSearch) adminProductSearch.addEventListener("input", displayAdmi
     const extra = [document.getElementById("add-product-section"), document.getElementById("edit-section"), document.getElementById("image-section")];
     const offlineButton = document.getElementById("openOfflineSaleButton");
     const feedbackButton = document.getElementById("feedbackInboxButton");
-    const show = function(view) { document.querySelectorAll("main > section").forEach(function(section) { section.hidden = true; }); Object.values(panels).forEach(function(panel) { if (panel) panel.hidden = true; }); extra.forEach(function(panel) { if (panel) panel.hidden = true; }); if (welcome) welcome.hidden = view !== "dashboard"; if (offlineButton) offlineButton.hidden = view !== "offline"; if (feedbackButton) feedbackButton.hidden = view !== "feedback"; if (view === "welcome") return; const panel = panels[view]; if (panel) panel.hidden = false; if (view === "dashboard" && panels.details) panels.details.hidden = false; if (view === "inventory" && window.renderInventory) window.renderInventory(); if (view === "orders") displayOrdersByStatus("all-orders"); };
+    const show = function(view) { document.querySelectorAll("main > section").forEach(function(section) { section.hidden = true; }); Object.values(panels).forEach(function(panel) { if (panel) panel.hidden = true; }); extra.forEach(function(panel) { if (panel) panel.hidden = true; }); if (welcome) welcome.hidden = view !== "dashboard"; if (offlineButton) offlineButton.hidden = view !== "offline"; if (feedbackButton) feedbackButton.hidden = view !== "feedback"; if (view === "welcome") return; const panel = panels[view]; if (panel) { panel.hidden = false; panel.style.display = ""; } if (view === "dashboard" && panels.details) panels.details.hidden = false; if (view === "inventory" && window.renderInventory) window.renderInventory(); if (view === "orders") displayOrdersByStatus("all-orders"); };
     show("dashboard");
     document.querySelectorAll(".admin-sidebar a").forEach(function(link) { link.addEventListener("click", function(event) { event.preventDefault(); const id = link.getAttribute("href").slice(1); const view = id === "admin-dashboard" ? "dashboard" : id === "inventory-panel" ? "inventory" : id === "sales-reports" ? "reports" : id === "products-panel" ? "products" : id === "offline-sale-section" ? "offline" : id === "orders-panel" ? "orders" : id === "feedback-inbox" ? "feedback" : "settings"; show(view); document.body.classList.add("sidebar-collapsed"); }); });
     window.openAdminPanel = function(section) { show(section === "products" ? "products" : section === "all-orders" || section === "Pending" || section === "Processing" || section === "Completed" ? "orders" : "dashboard"); };
@@ -2447,6 +2447,7 @@ if (adminProductSearch) adminProductSearch.addEventListener("input", displayAdmi
     setInterval(render, 5000);
     window.renderInventory = render;
 })();
+
 
 
 
