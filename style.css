@@ -2479,3 +2479,18 @@ body.dark-mode .customer-dashboard-toggle:hover, body.dark-mode .customer-dashbo
 body.dark-mode .dashboard-review-card { background: #203638; color: #e6f0ef; }
 body.dark-mode .dashboard-review-card small { color: #b7c9c7; }
 @media (max-width: 700px) { .dashboard-reviews { padding: 14px; } .dashboard-review-list { grid-template-columns: 1fr; } .dashboard-reviews-heading { align-items: start; flex-direction: column; } }
+/* Desktop customer navigation uses the same menu drawer as mobile. */
+@media (min-width: 701px) {
+    .customer-menu-toggle { display: inline-flex; position: absolute; left: 24px; top: 24px; align-items: center; justify-content: center; width: 46px; height: 46px; border: 2px solid #f5b400; border-radius: 12px; color: #102526; background: #f5b400; font-size: 1.35rem; cursor: pointer; z-index: 3; box-shadow: 0 4px 12px rgba(0,0,0,.2); }
+    .customer-menu-toggle:hover, .customer-menu-toggle:focus-visible { background: #ffd45b; }
+    nav#customer-sidebar { position: fixed; top: 0; left: 0; bottom: 0; z-index: 1200; display: flex; flex-direction: column; align-items: stretch; justify-content: flex-start; width: min(340px, 88vw); height: 100vh; margin: 0; padding: 76px 16px 24px; overflow-y: auto; background: var(--surface); box-shadow: 12px 0 34px rgba(0,0,0,.2); transform: translateX(-105%); transition: transform .22s ease; }
+    body.customer-sidebar-open nav#customer-sidebar { transform: translateX(0); }
+    body.customer-sidebar-open::after { content: ""; position: fixed; inset: 0; z-index: 1190; background: rgba(9,24,25,.42); }
+    body.customer-sidebar-open > main, body.customer-sidebar-open > footer { visibility: hidden; }
+    nav#customer-sidebar > a, nav#customer-sidebar > button, nav#customer-sidebar .theme-toggle { flex: 0 0 auto; width: 100%; min-height: 50px; box-sizing: border-box; padding: 13px 14px; border-radius: 9px; text-align: left; }
+    nav#customer-sidebar > a { color: var(--ink); }
+    nav#customer-sidebar > a:hover, nav#customer-sidebar > a:focus-visible, nav#customer-sidebar > button:hover, nav#customer-sidebar > button:focus-visible { background: #e8f2f1; }
+    nav#customer-sidebar .customer-sidebar-close { display: block; position: absolute; top: 17px; right: 16px; width: auto; min-height: 0; padding: 2px 8px; border: 0; color: var(--ink); background: transparent; font-size: 1.9rem; line-height: 1; cursor: pointer; }
+    nav#customer-sidebar .customer-categories-toggle, nav#customer-sidebar .customer-dashboard-toggle { color: var(--ink); background: transparent; }
+    body.dark-mode nav#customer-sidebar > a:hover, body.dark-mode nav#customer-sidebar > a:focus-visible, body.dark-mode nav#customer-sidebar > button:hover, body.dark-mode nav#customer-sidebar > button:focus-visible { background: #244143; }
+}
