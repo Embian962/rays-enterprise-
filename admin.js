@@ -2492,10 +2492,35 @@ if (adminProductSearch) adminProductSearch.addEventListener("input", displayAdmi
     const render = function() {
         const term = (search?.value || "").toLowerCase().trim();
         const matches = products.filter(function(product) { return !term || String(product.name || "").toLowerCase().includes(term) || String(product.id || "").includes(term); });
-        body.innerHTML = matches.map(function(product) { const stock = Number(product.stock) || 0; const status = stock === 0 ? "Out of stock" : stock <= 3 ? "Low stock" : "Available"; return `<tr><td>${product.name}<small>#${product.id}</small></td><td>${product.category}</td><td>${stock}</td><td><span class="inventory-status inventory-${status.toLowerCase().replace(/\s/g, "-")}">${status}</span></td></tr>`; }).join("") || '<tr><td colspan="4">No matching products.</td></tr>';
+body.innerHTML = matches.map(function(product) {
+            const stock = Math.max(0, Number(product.stock) || 0);
+            const status = stock === 0 ? "Out of stock" : stock <= 3 ? "Low stock" : "Available";
+            return "<tr><td>" + product.name + "<small>#" + product.id + "</small></td><td>" + product.category + "</td><td><div class=\"inventory-stock-editor\"><input type=\"number\" min=\"0\" step=\"1\" value=\"" + stock + "\" class=\"inventory-stock-input\" data-stock-product-id=\"" + product.id + "\" aria-label=\"Stock for " + product.name + "\"><button type=\"button\" class=\"inventory-stock-save\" data-stock-save-id=\"" + product.id + "\">Save</button></div></td><td><span class=\"inventory-status inventory-" + status.toLowerCase().replace(/\s/g, "-") + "\">" + status + "</span></td></tr>";
+        }).join("") || '<tr><td colspan="4">No matching products.</td></tr>';
     };
+body.addEventListener("click", async function(event) {
+        const button = event.target.closest("[data-stock-save-id]");
+        if (!button) return;
+        const product = products.find(function(item) { return String(item.id) === String(button.dataset.stockSaveId); });
+        const input = Array.from(body.querySelectorAll("[data-stock-product-id]")).find(function(item) { return String(item.dataset.stockProductId) === String(button.dataset.stockSaveId); });
+        const value = Number(input && input.value);
+        if (!product || !input || !Number.isInteger(value) || value < 0) { alert("Enter a whole stock number of zero or more."); return; }
+        button.disabled = true;
+        button.textContent = "Saving...";
+        try {
+            const response = await adminRequest("/api/products/" + product.id, { method: "PUT", body: JSON.stringify({ name: product.name, price: product.price, stock: value, category: product.category, colors: product.colors || [], image: product.image || product.image_url || "", images: Array.isArray(product.images) ? product.images : [], featured: Boolean(product.featured), salePrice: product.sale_price ?? product.salePrice ?? null }) });
+            if (!response) return;
+            const updated = await response.json();
+            Object.assign(product, updated);
+            render();
+            updateDashboard();
+        } catch (error) {
+            alert(error.message || "Could not update stock.");
+            button.disabled = false;
+            button.textContent = "Save";
+        }
+    });
     search?.addEventListener("input", render);
-    setInterval(render, 5000);
     window.renderInventory = render;
 })();
 

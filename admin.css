@@ -879,4 +879,8 @@ body:not(.admin-signed-in) main { margin-top: 30px; }
 .admin-install-help-card p { margin: 9px 0; line-height: 1.5; }
 .admin-install-help-card > button { position: absolute; top: 8px; right: 10px; border: 0; background: transparent; color: #64748b; font-size: 24px; cursor: pointer; }
 body.admin-dark .admin-install-help-card { background: #1e293b; color: #e2e8f0; }
-body.admin-dark .admin-install-help-card h2 { color: #f8fafc; }
+body.admin-dark .admin-install-help-card h2 { color: #f8fafc; }.inventory-stock-editor { display: flex; align-items: center; gap: 8px; min-width: 170px; }
+.inventory-stock-input { width: 76px; min-height: 36px; padding: 7px 9px; border: 1px solid #cbd5e1; border-radius: 8px; font: inherit; }
+.inventory-stock-save { min-height: 36px; padding: 7px 12px; border: 0; border-radius: 8px; color: #fff; background: #0f766e; font-weight: 700; cursor: pointer; }
+.inventory-stock-save:hover, .inventory-stock-save:focus-visible { background: #115e59; }
+.inventory-stock-save:disabled { cursor: wait; opacity: .65; }
