@@ -905,6 +905,14 @@ if (searchButton) {
 }
 
 
+function normalizeProductCategory(category) {
+    const value = String(category || "").trim().toLowerCase().replace(/&/g, "and").replace(/[_-]+/g, " ").replace(/\s+/g, " ");
+    if (value === "kitchen dining" || value === "kitchen and dining") return "kitchenware";
+    if (value === "furniture") return "seat-covers";
+    if (value === "bedding" || value === "beddings" || value === "bedding linen" || value === "beddings and linens") return "bedding-and-linens";
+    return category;
+}
+
 function categorySlug(category) {
     return String(category || "").toLowerCase().trim().replace(/&/g, "and").replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "");
 }
@@ -1150,7 +1158,7 @@ async function loadProducts() {
     }
 
 
-    const products = fetchedProducts || getProducts();
+    const products = (fetchedProducts || getProducts()).map(function(product) { return { ...product, category: normalizeProductCategory(product.category) }; });
 
     const categoryContainer = document.querySelector(".categories");
     if (categoryContainer) {

@@ -60,7 +60,7 @@ async function loadAdminProducts() {
     const base = (apiUrl || "") + "/api/products";
     try {
         const summaryProducts = await fetchAdminProductList(base + "?summary=1&v=" + Date.now(), 30000);
-        products = summaryProducts;
+        products = summaryProducts.map(function(product) { return { ...product, category: normalizeAdminProductCategory(product.category) }; });
         displayAdminProducts();
         updateDashboard();
 
@@ -72,7 +72,7 @@ async function loadAdminProducts() {
             fullProducts = await fetchAdminProductList(base + "?retry=1&v=" + Date.now(), 90000);
         }
         if (Array.isArray(fullProducts)) {
-            products = fullProducts;
+            products = fullProducts.map(function(product) { return { ...product, category: normalizeAdminProductCategory(product.category) }; });
             try { saveProducts(fullProducts); } catch (storageError) { console.warn("Products loaded but could not be cached locally.", storageError); }
             displayAdminProducts();
             updateDashboard();
@@ -82,7 +82,7 @@ async function loadAdminProducts() {
         try {
             const cachedProducts = getProducts();
             if (Array.isArray(cachedProducts) && cachedProducts.length) {
-                products = cachedProducts;
+                products = cachedProducts.map(function(product) { return { ...product, category: normalizeAdminProductCategory(product.category) }; });
                 displayAdminProducts();
                 updateDashboard();
             }
