@@ -910,6 +910,8 @@ function normalizeProductCategory(category) {
     if (value === "kitchen dining" || value === "kitchen and dining") return "kitchenware";
     if (value === "furniture") return "seat-covers";
     if (value === "bedding" || value === "beddings" || value === "bedding linen" || value === "beddings and linens") return "bedding-and-linens";
+    if (value === "home decor" || value === "wall decor" || value === "home decor and wall decor") return "home-decor-and-wall-decor";
+    if (value === "mats rugs" || value === "mats and rugs") return "mats-and-rugs";
     return category;
 }
 
