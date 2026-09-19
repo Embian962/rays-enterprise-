@@ -2493,4 +2493,13 @@ body.dark-mode .dashboard-review-card small { color: #b7c9c7; }
     nav#customer-sidebar .customer-sidebar-close { display: block; position: absolute; top: 17px; right: 16px; width: auto; min-height: 0; padding: 2px 8px; border: 0; color: var(--ink); background: transparent; font-size: 1.9rem; line-height: 1; cursor: pointer; }
     nav#customer-sidebar .customer-categories-toggle, nav#customer-sidebar .customer-dashboard-toggle { color: var(--ink); background: transparent; }
     body.dark-mode nav#customer-sidebar > a:hover, body.dark-mode nav#customer-sidebar > a:focus-visible, body.dark-mode nav#customer-sidebar > button:hover, body.dark-mode nav#customer-sidebar > button:focus-visible { background: #244143; }
-}
+}/* Product details dark-mode contrast */
+body.dark-mode .product-details-content { color: #e6f0ef; }
+body.dark-mode .product-details-price { color: #8ed2c5; }
+body.dark-mode .product-details-content .product-colour-label { color: #e6f0ef; }
+body.dark-mode .product-details-colour-select { color: #f0f8f7; background: #203638; border-color: #55706e; }
+body.dark-mode .product-details-add { color: #102526; background: #8ed2c5; }
+body.dark-mode .product-details-add:hover { color: #102526; background: #b4e8dd; }
+body.dark-mode .product-details-save { color: #b7e4dc; background: #203638; border-color: #55706e; }
+body.dark-mode .product-details-save:hover { color: #102526; background: #8ed2c5; border-color: #8ed2c5; }
+body.dark-mode .product-details-close { color: #102526; background: #e6f0ef; }
