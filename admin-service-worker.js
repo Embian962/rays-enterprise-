@@ -1,4 +1,4 @@
-const ADMIN_CACHE = "rays-admin-shell-v3";
+const ADMIN_CACHE = "rays-admin-shell-v4";
 const ADMIN_SHELL = ["/admin", "/admin.html", "/admin.css", "/admin.js", "/admin-access.js", "/api-config.js", "/rays-enterprise-logo-new.jpg", "/admin-manifest.json", "/admin-pwa.js"];
 self.addEventListener("install", event => {
   event.waitUntil(caches.open(ADMIN_CACHE).then(cache => cache.addAll(ADMIN_SHELL)).then(() => self.skipWaiting()));
