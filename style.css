@@ -2523,3 +2523,14 @@ body.dark-mode .product-details-close { color: #102526; background: #e6f0ef; }
     .customer-top-actions > a[href="#cart"] { min-height: 38px; padding: 6px 7px; font-size: .7rem; }
     .customer-top-actions .customer-auth-button { min-height: 38px; padding: 6px 8px; font-size: .7rem; }
 }
+/* The menu lives inside the top action group; keep it in flow on desktop. */
+@media (min-width: 701px) {
+    .customer-top-actions .customer-menu-toggle {
+        position: static !important;
+        left: auto !important;
+        top: auto !important;
+        transform: none !important;
+        order: -1;
+        flex: 0 0 auto;
+    }
+}
