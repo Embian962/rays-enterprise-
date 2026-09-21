@@ -65,6 +65,7 @@ let cart = [];
 let myList = getMyList();
 
 let currentCategory = "all";
+let catalogProducts = [];
 // Customer-selectable light/dark storefront theme.
 const themeToggle = document.getElementById("theme-toggle");
 const savedTheme = localStorage.getItem("rays-theme") || "light";
@@ -471,8 +472,7 @@ function displayMyList() {
 
 function addToCart(productName, color) {
 
-    const products =
-        getProducts();
+    const products = catalogProducts.length ? catalogProducts : getProducts();
 
 
     const product =
@@ -801,8 +801,7 @@ function increaseQuantity(index) {
     }
 
 
-    const products =
-        getProducts();
+    const products = catalogProducts.length ? catalogProducts : getProducts();
 
 
     const currentProduct =
@@ -1161,6 +1160,7 @@ async function loadProducts() {
 
 
     const products = (fetchedProducts || getProducts()).map(function(product) { return { ...product, category: normalizeProductCategory(product.category) }; });
+    catalogProducts = products;
 
     const categoryContainer = document.querySelector(".categories");
     if (categoryContainer) {
