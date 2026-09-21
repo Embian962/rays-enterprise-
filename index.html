@@ -132,7 +132,7 @@
 
     <button type="button" id="customer-dashboard-toggle" class="customer-dashboard-toggle">Dashboard</button>
 
-    <a href="#reviews">
+    <a href="#reviews" onclick="showReviews(event)">
         Reviews
     </a>
 
@@ -159,7 +159,7 @@
             <span>↩ Clear returns guidance</span>
             <a href="https://www.google.com/maps/search/?api=1&amp;query=Amona+Arcade" target="_blank" rel="noopener noreferrer">📍 Visit our store</a>
         </div>
-        <div class="dashboard-promos"><span>✨ New home essentials added regularly</span><span>📦 Delivery arranged to suit your order</span><span>💬 Need help? Chat with our team</span></div><section class="dashboard-reviews" id="customer-public-reviews" aria-live="polite"><div class="dashboard-reviews-heading"><div><p class="welcome-eyebrow">CUSTOMER VOICES</p><h3>What customers say</h3></div><a href="#reviews">View all reviews</a></div><div class="dashboard-review-list" id="dashboard-review-list"><p class="dashboard-reviews-loading">Loading recent reviews…</p></div></section><p class="welcome-menu-hint">Open the menu to browse products, categories, your cart, and account.</p>
+        <div class="dashboard-promos"><span>✨ New home essentials added regularly</span><span>📦 Delivery arranged to suit your order</span><span>💬 Need help? Chat with our team</span></div><section class="dashboard-reviews" id="customer-public-reviews" aria-live="polite"><div class="dashboard-reviews-heading"><div><p class="welcome-eyebrow">CUSTOMER VOICES</p><h3>What customers say</h3></div><a href="#reviews" onclick="showReviews(event)">View all reviews</a></div><div class="dashboard-review-list" id="dashboard-review-list"><p class="dashboard-reviews-loading">Loading recent reviews…</p></div></section><p class="welcome-menu-hint">Open the menu to browse products, categories, your cart, and account.</p>
     </section>
 
 
@@ -834,7 +834,7 @@
 
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script src="api-config.js?v=20260915-auth-fix"></script>
-<script src="script.js?v=20260921-contact-nav"></script>
+<script src="script.js?v=20260921-reviews-nav"></script>
 
 </body>
 

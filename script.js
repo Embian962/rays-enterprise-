@@ -295,6 +295,13 @@ function showContact(event) {
     if (contact) { contact.style.display = "block"; contact.scrollIntoView({ behavior: "smooth" }); }
 }
 
+function showReviews(event) {
+    if (event) event.preventDefault();
+    hideAllSections();
+    const reviews = document.getElementById("reviews");
+    if (reviews) { reviews.style.display = "block"; reviews.scrollIntoView({ behavior: "smooth" }); }
+}
+
 function showCustomerDashboard(event) {
     if (event) event.preventDefault();
     hideAllSections();
