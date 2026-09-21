@@ -288,6 +288,13 @@ function hideAllSections() {
 }
 
 
+function showContact(event) {
+    if (event) event.preventDefault();
+    hideAllSections();
+    const contact = document.getElementById("contact");
+    if (contact) { contact.style.display = "block"; contact.scrollIntoView({ behavior: "smooth" }); }
+}
+
 function showCustomerDashboard(event) {
     if (event) event.preventDefault();
     hideAllSections();
