@@ -2676,8 +2676,8 @@ loadPublicDashboardReviews();
 displayCart();
 
 hideAllSections();
-const customerWelcome = document.getElementById("customer-welcome");
-if (customerWelcome) customerWelcome.style.display = "block";
+const productsHomePage = document.getElementById("products");
+if (productsHomePage) productsHomePage.style.display = "block";
 
 displayMyList();
 
