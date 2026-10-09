@@ -17,6 +17,10 @@
   ],
   "rewrites": [
     {
+      "source": "/checkout-script.js",
+      "destination": "/script.js"
+    },
+    {
       "source": "/catalog-script.js",
       "destination": "/script.js"
     },
