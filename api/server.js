@@ -298,8 +298,47 @@ app.get("/api/products", asyncRoute(async (req, res) => {
     return res.json(rows.map(product => ({ ...product, images: [], image: "", has_image: Boolean(product.has_image) })));
   }
   const { rows } = await pool.query("SELECT * FROM products ORDER BY created_at DESC");
-  res.json(rows.map(product => ({ ...product, images: normalizeProductImages(product.images, product.image, product.image_url) })));
+  if (String(req.query.catalog || "") === "1") {
+  const products = rows.map(product => {
+    const images = normalizeProductImages(product.images, product.image, product.image_url).map((image, index) => {
+      if (!image.startsWith("data:")) return image;
+      return "/api/products/" + encodeURIComponent(product.id) + "/images/" + index + "?v=" + encodeURIComponent(product.updated_at || "");
+    });
+    return { ...product, image: images[0] || "", image_url: images[0] || "", images };
+  });
+  return res.set("Cache-Control", "no-store").json(products);
+}
+res.json(rows.map(product => ({ ...product, images: normalizeProductImages(product.images, product.image, product.image_url) })));
 }));
+
+// The customer catalog receives lightweight image URLs. Legacy data URLs stay
+// in the database and are streamed only when an <img> requests the image.
+app.get("/api/products/:id/images/:index", asyncRoute(async (req, res) => {
+  const index = Number.parseInt(req.params.index, 10);
+  if (!Number.isInteger(index) || index < 0) return res.status(404).end();
+  const { rows } = await pool.query("SELECT * FROM products WHERE id=$1", [req.params.id]);
+  const product = rows[0];
+  if (!product) return res.status(404).end();
+  const images = normalizeProductImages(product.images, product.image, product.image_url);
+  const image = images[index];
+  if (!image) return res.status(404).end();
+
+  const dataUrl = image.match(/^data:(image\/[a-zA-Z0-9.+-]+);base64,([\s\S]*)$/);
+  if (dataUrl) {
+    const body = Buffer.from(dataUrl[2], "base64");
+    res.set({
+      "Content-Type": dataUrl[1],
+      "Content-Length": String(body.length),
+      "Cache-Control": "public, max-age=31536000, immutable",
+      "Last-Modified": new Date(product.updated_at || Date.now()).toUTCString()
+    });
+    return res.send(body);
+  }
+
+  if (!/^https?:\/\//i.test(image)) return res.status(404).end();
+  return res.redirect(302, image);
+}));
+
 
 app.post("/api/products", isAdmin, asyncRoute(async (req, res) => {
   const { name, price, stock, category, colors = [], image, images = [], featured = false, salePrice = null } = req.body;
