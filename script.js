@@ -2228,7 +2228,19 @@ if (checkoutForm) {
 
             // PRODUCTS
 
-            const products = getProducts();
+            // Validate against the current server inventory instead of the browser cache.
+            // Product records can exceed local storage limits when they include large images.
+            let products;
+            try {
+                const apiUrl = (window.RAYS_API_URL || "").replace(/\/$/, "");
+                const response = await fetch(apiUrl + "/api/products?summary=1", { cache: "no-store" });
+                if (!response.ok) throw new Error("Could not check current inventory.");
+                products = await response.json();
+                if (!Array.isArray(products)) throw new Error("The inventory response was invalid.");
+            } catch (error) {
+                alert("We couldn't check product availability right now. Please try again in a moment.");
+                return;
+            }
 
 
             // STOCK CHECK
@@ -2247,8 +2259,9 @@ if (checkoutForm) {
                     products.find(
                         function(product) {
 
-                            return product.name ===
-                                cartProduct.name;
+                            return cartProduct.id != null
+                                ? String(product.id) === String(cartProduct.id)
+                                : product.name === cartProduct.name;
 
                         }
                     );
@@ -2261,7 +2274,6 @@ if (checkoutForm) {
                         " is no longer available."
                     );
 
-                    loadProducts();
 
                     return;
                 }
@@ -2414,44 +2426,22 @@ if (checkoutForm) {
             saveOrders(orders);
 
 
-            // REDUCE STOCK
-
-            cart.forEach(
-                function(cartProduct) {
-
-                    const product =
-                        products.find(
-                            function(item) {
-
-                                return item.name ===
-                                    cartProduct.name;
-
-                            }
-                        );
-
-
-                    if (product) {
-
-                        product.stock =
-                            Math.max(
-                                0,
-                                Number(
-                                    product.stock
-                                ) -
-                                Number(
-                                    cartProduct.quantity
-                                )
-                            );
-
-                    }
-
-                }
-            );
-
-
-            saveProducts(
-                products
-            );
+            // Update the local cache only as a best-effort convenience.
+            // The server has already applied the authoritative stock update.
+            try {
+                const cachedProducts = getProducts();
+                cart.forEach(function(cartProduct) {
+                    const product = cachedProducts.find(function(item) {
+                        return cartProduct.id != null
+                            ? String(item.id) === String(cartProduct.id)
+                            : item.name === cartProduct.name;
+                    });
+                    if (product) product.stock = Math.max(0, Number(product.stock) - Number(cartProduct.quantity));
+                });
+                saveProducts(cachedProducts);
+            } catch (storageError) {
+                console.warn("Order completed; local stock cache could not be updated.", storageError);
+            }
 
 
             // CLEAR CART
@@ -2766,29 +2756,3 @@ document.addEventListener("click", function(event) {
     panel.addEventListener("click", function(event) { if (event.target.closest("button")) close(); });
     document.addEventListener("keydown", function(event) { if (event.key === "Escape") close(); });
 })();
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
