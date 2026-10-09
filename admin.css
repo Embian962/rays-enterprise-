@@ -755,6 +755,12 @@ body:not(.admin-authenticated) main {
 .admin-products-heading h2 { margin: 0; }
 .open-product-form-button { border: 0; border-radius: 9px; padding: 10px 14px; color: #fff; background: #0f766e; font-weight: 800; cursor: pointer; }
 .open-product-form-button:hover { background: #115e59; }
+.product-image-migration { margin-top: 16px; padding: 14px; border: 1px solid #cbd5e1; border-radius: 10px; background: #f8fafc; }
+.product-image-migration p { margin: 0 0 10px; color: #475569; }
+.product-image-migration button { border: 0; border-radius: 8px; padding: 10px 14px; color: #fff; background: #0f766e; font-weight: 700; cursor: pointer; }
+.product-image-migration button:hover { background: #115e59; }
+.product-image-migration button:disabled { opacity: .6; cursor: wait; }
+#productImageMigrationStatus { margin: 10px 0 0; font-weight: 700; }
 @media (max-width: 520px) { .admin-products-heading { align-items: flex-start; flex-direction: column; } }
 
 .product-form-actions { display: flex; gap: 10px; }

@@ -3,6 +3,7 @@ import cors from "cors";
 import crypto from "crypto";
 import express from "express";
 import pg from "pg";
+import sharp from "sharp";
 
 const { Pool } = pg;
 const app = express();
@@ -289,26 +290,111 @@ app.post("/api/admin/login", (req, res) => {
 const normalizeProductImages = (images, image, imageUrl) => {
   const existing = Array.isArray(images) ? images : [];
   const legacy = imageUrl || image;
-  return [...new Set([...existing, legacy].filter(value => typeof value === "string" && value.trim()))];
+  return [...new Set([legacy, ...existing].filter(value => typeof value === "string" && value.trim()))];
 };
+
+const PRODUCT_IMAGE_BUCKET = "product-images";
+const isDataImage = value => typeof value === "string" && value.startsWith("data:");
+const hasInlineProductImages = "COALESCE(image, '') LIKE 'data:%' OR EXISTS (SELECT 1 FROM jsonb_array_elements_text(CASE WHEN jsonb_typeof(images) = 'array' THEN images ELSE '[]'::jsonb END) AS image_value(value) WHERE image_value.value LIKE 'data:%')";
+
+async function uploadProductImage(value, productId = "new", stableName = "") {
+  if (!isDataImage(value)) return value;
+
+  const match = value.match(/^data:(image\/[a-z0-9.+-]+);base64,([a-z0-9+/=\r\n]+)$/i);
+  if (!match) {
+    const error = new Error("A product image has an unsupported data format.");
+    error.status = 400;
+    error.expose = true;
+    throw error;
+  }
+
+  const supabaseUrl = String(process.env.SUPABASE_URL || "").replace(/\/$/, "");
+  const serviceKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
+  if (!supabaseUrl || !serviceKey) {
+    const error = new Error("Product image storage is not configured. Set SUPABASE_URL and SUPABASE_SERVICE_ROLE_KEY on the API service.");
+    error.status = 503;
+    error.expose = true;
+    throw error;
+  }
+
+  const input = Buffer.from(match[2].replace(/\s/g, ""), "base64");
+  if (!input.length || input.length > 20 * 1024 * 1024) {
+    const error = new Error("Each product image must be smaller than 20 MB.");
+    error.status = 413;
+    error.expose = true;
+    throw error;
+  }
+
+  let optimized;
+  try {
+    optimized = await sharp(input, { limitInputPixels: 50_000_000 })
+      .rotate()
+      .resize({ width: 1400, height: 1400, fit: "inside", withoutEnlargement: true })
+      .webp({ quality: 82, effort: 4 })
+      .toBuffer();
+  } catch {
+    const error = new Error("This product image could not be processed. Try a JPEG, PNG, WebP, AVIF, GIF, or TIFF image.");
+    error.status = 400;
+    error.expose = true;
+    throw error;
+  }
+  const safeProductId = String(productId).replace(/[^a-z0-9_-]/gi, "") || "new";
+  const safeFileName = String(stableName).replace(/[^a-z0-9_-]/gi, "");
+  const objectPath = `products/${safeProductId}/${safeFileName || crypto.randomUUID()}.webp`;
+  const upload = await fetch(`${supabaseUrl}/storage/v1/object/${PRODUCT_IMAGE_BUCKET}/${objectPath}`, {
+    method: "POST",
+    headers: {
+      apikey: serviceKey,
+      Authorization: `Bearer ${serviceKey}`,
+      "Content-Type": "image/webp",
+      "Cache-Control": "public, max-age=31536000, immutable",
+      "x-upsert": stableName ? "true" : "false"
+    },
+    body: optimized
+  });
+  if (!upload.ok) {
+    const message = await upload.text();
+    const error = new Error(`Could not store product image for product ${productId}: ${message.slice(0, 300)}`);
+    error.status = 502;
+    error.expose = true;
+    throw error;
+  }
+
+  return `${supabaseUrl}/storage/v1/object/public/${PRODUCT_IMAGE_BUCKET}/${objectPath}`;
+}
+
+function publicProduct(product) {
+  const images = normalizeProductImages(product.images, product.image, product.image_url);
+  const primary = [product.image, product.image_url, ...images].find(image => typeof image === "string" && image.trim()) || "";
+  const { image_url: _legacyImageUrl, ...publicFields } = product;
+  return { ...publicFields, image: primary, images };
+}
 
 app.get("/api/products", asyncRoute(async (req, res) => {
   if (String(req.query.summary || "") === "1") {
     const { rows } = await pool.query("SELECT id, name, price, stock, category, colors, featured, sale_price, created_at, updated_at, (COALESCE(jsonb_array_length(images), 0) > 0 OR COALESCE(image, '') <> '') AS has_image FROM products ORDER BY created_at DESC");
     return res.json(rows.map(product => ({ ...product, images: [], image: "", has_image: Boolean(product.has_image) })));
   }
-  const { rows } = await pool.query("SELECT * FROM products ORDER BY created_at DESC");
+  const { rows } = await pool.query(`
+    SELECT id, name, price, stock, category, colors, featured, sale_price, created_at, updated_at,
+      image, images
+    FROM products ORDER BY created_at DESC
+  `);
+  const products = rows.map(publicProduct);
   if (String(req.query.catalog || "") === "1") {
-  const products = rows.map(product => {
-    const images = normalizeProductImages(product.images, product.image, product.image_url).map((image, index) => {
-      if (!image.startsWith("data:")) return image;
-      return "/api/products/" + encodeURIComponent(product.id) + "/images/" + index + "?v=" + encodeURIComponent(product.updated_at || "");
+    const catalogProducts = products.map(product => {
+      const images = product.images.map((image, index) => {
+        if (!image.startsWith("data:")) return image;
+        return "/api/products/" + encodeURIComponent(product.id) + "/images/" + index + "?v=" + encodeURIComponent(product.updated_at || "");
+      });
+      const primary = product.image && product.image.startsWith("data:")
+        ? "/api/products/" + encodeURIComponent(product.id) + "/images/0?v=" + encodeURIComponent(product.updated_at || "")
+        : images[0] || product.image || "";
+      return { ...product, image: primary, images };
     });
-    return { ...product, image: images[0] || "", image_url: images[0] || "", images };
-  });
-  return res.set("Cache-Control", "no-store").json(products);
-}
-res.json(rows.map(product => ({ ...product, images: normalizeProductImages(product.images, product.image, product.image_url) })));
+    return res.set("Cache-Control", "no-store").json(catalogProducts);
+  }
+  res.json(products);
 }));
 
 // The customer catalog receives lightweight image URLs. Legacy data URLs stay
@@ -342,48 +428,65 @@ app.get("/api/products/:id/images/:index", asyncRoute(async (req, res) => {
 
 app.post("/api/products", isAdmin, asyncRoute(async (req, res) => {
   const { name, price, stock, category, colors = [], image, images = [], featured = false, salePrice = null } = req.body;
-  const productImages = normalizeProductImages(images, image);
-  const primaryImage = image || productImages[0] || "";
+  const imageSources = normalizeProductImages(images, image);
+  const productImages = [];
+  for (const source of imageSources) productImages.push(await uploadProductImage(source));
+  const primarySource = image || imageSources[0] || "";
+  const primaryIndex = imageSources.indexOf(primarySource);
+  const storedPrimaryImage = primaryIndex >= 0 ? productImages[primaryIndex] : productImages[0] || "";
   const { rows } = await pool.query(
     "INSERT INTO products (name, price, stock, category, colors, image, images, featured, sale_price) VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9) RETURNING *",
-    [name, price, stock, category, JSON.stringify(colors), primaryImage, JSON.stringify(productImages), featured, salePrice]
+    [name, price, stock, category, JSON.stringify(colors), storedPrimaryImage, JSON.stringify(productImages), featured, salePrice]
   );
-  res.status(201).json({ ...rows[0], images: normalizeProductImages(rows[0].images, rows[0].image, rows[0].image_url) });
+  res.status(201).json(publicProduct(rows[0]));
 }));
 
 app.put("/api/products/:id", isAdmin, asyncRoute(async (req, res) => {
   const { name, price, stock, category, colors = [], image, images = [], featured = false, salePrice = null } = req.body;
-  const productImages = normalizeProductImages(images, image);
-  const primaryImage = image || productImages[0] || "";
+  const imageSources = normalizeProductImages(images, image);
+  const productImages = [];
+  for (const source of imageSources) productImages.push(await uploadProductImage(source, req.params.id));
+  const primarySource = image || imageSources[0] || "";
+  const primaryIndex = imageSources.indexOf(primarySource);
+  const primaryImage = primaryIndex >= 0 ? productImages[primaryIndex] : productImages[0] || "";
   const { rows } = await pool.query(
     "UPDATE products SET name=$1, price=$2, stock=$3, category=$4, colors=$5, image=$6, images=$7, featured=$8, sale_price=$9, updated_at=NOW() WHERE id=$10 RETURNING *",
     [name, price, stock, category, JSON.stringify(colors), primaryImage, JSON.stringify(productImages), featured, salePrice, req.params.id]
   );
   if (!rows[0]) return res.status(404).json({ error: "Product not found." });
-  res.json({ ...rows[0], images: normalizeProductImages(rows[0].images, rows[0].image, rows[0].image_url) });
+  res.json(publicProduct(rows[0]));
 }));
 
 app.post("/api/admin/migrate-images", isAdmin, asyncRoute(async (req, res) => {
   const serviceKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
   const supabaseUrl = String(process.env.SUPABASE_URL || "").replace(/\/$/, "");
   if (!serviceKey || !supabaseUrl) return res.status(503).json({ error: "Supabase Storage migration is not configured." });
-  const limit = Math.min(Math.max(Number(req.body?.limit) || 10, 1), 25);
-  const { rows } = await pool.query("SELECT id, image, images FROM products WHERE image LIKE 'data:%' ORDER BY id LIMIT $1", [limit]);
-  let migrated = 0;
-  for (const product of rows) {
-    const match = String(product.image).match(/^data:([^;]+);base64,(.+)$/s);
-    if (!match) continue;
-    const mime = match[1];
-    const ext = mime.includes("png") ? "png" : mime.includes("webp") ? "webp" : "jpg";
-    const path = `products/${product.id}-1.${ext}`;
-    const upload = await fetch(`${supabaseUrl}/storage/v1/object/product-images/${path}`, { method: "POST", headers: { apikey: serviceKey, Authorization: `Bearer ${serviceKey}`, "Content-Type": mime, "x-upsert": "true" }, body: Buffer.from(match[2], "base64") });
-    if (!upload.ok) throw new Error(`Storage upload failed for product ${product.id}: ${await upload.text()}`);
-    const publicUrl = `${supabaseUrl}/storage/v1/object/public/product-images/${path}`;
-    await pool.query("UPDATE products SET image=$1, images=$2, updated_at=NOW() WHERE id=$3", [publicUrl, JSON.stringify([publicUrl]), product.id]);
-    migrated++;
+  const requestedLimit = Number(req.body?.limit);
+  const limit = Math.min(Math.max(Number.isFinite(requestedLimit) ? Math.floor(requestedLimit) : 10, 1), 25);
+  const { rows } = await pool.query(`SELECT id FROM products WHERE ${hasInlineProductImages} ORDER BY id LIMIT $1`, [limit]);
+  let migratedProducts = 0;
+  let migratedImages = 0;
+  for (const { id } of rows) {
+    const result = await pool.query("SELECT id, image, images FROM products WHERE id=$1", [id]);
+    const product = result.rows[0];
+    if (!product) continue;
+    const imageSources = normalizeProductImages(product.images, product.image, product.image_url);
+    const migratedGallery = [];
+    for (let index = 0; index < imageSources.length; index++) {
+      const source = imageSources[index];
+      const stored = await uploadProductImage(source, product.id, isDataImage(source) ? `legacy-${index + 1}` : "");
+      if (isDataImage(source)) migratedImages++;
+      migratedGallery.push(stored);
+    }
+    const primarySource = product.image || product.image_url || imageSources[0] || "";
+    const primaryIndex = imageSources.indexOf(primarySource);
+    const primaryImage = primaryIndex >= 0 ? migratedGallery[primaryIndex] : await uploadProductImage(primarySource, product.id);
+    const finalImages = [...new Set([primaryImage, ...migratedGallery].filter(Boolean))];
+    await pool.query("UPDATE products SET image=$1, images=$2, updated_at=NOW() WHERE id=$3", [primaryImage || finalImages[0] || "", JSON.stringify(finalImages), product.id]);
+    migratedProducts++;
   }
-  const remaining = await pool.query("SELECT COUNT(*)::int AS count FROM products WHERE image LIKE 'data:%'");
-  res.json({ migrated, remaining: remaining.rows[0].count });
+  const remaining = await pool.query(`SELECT COUNT(*)::int AS count FROM products WHERE ${hasInlineProductImages}`);
+  res.json({ migratedProducts, migratedImages, remainingProducts: remaining.rows[0].count });
 }));
 app.delete("/api/products/:id", isAdmin, asyncRoute(async (req, res) => {
   const result = await pool.query("DELETE FROM products WHERE id=$1", [req.params.id]);
@@ -566,10 +669,13 @@ app.use((error, _req, res, _next) => {
   console.error(error);
   if (error?.type === "entity.too.large" || error?.status === 413) {
     return res.status(413).json({
-      error: "The product image is too large. Choose an image smaller than 15 MB."
+      error: "The request is too large. Choose smaller product images and try again."
     });
   }
-  res.status(500).json({ error: "The server could not complete that request." });
+  const status = Number(error?.status);
+  const responseStatus = status >= 400 && status < 600 ? status : 500;
+  const message = error?.expose ? error.message : "The server could not complete that request.";
+  res.status(responseStatus).json({ error: message });
 });
 
 await ensureProductSchema();

@@ -100,6 +100,45 @@ async function loadAdminProducts() {
     }
 }
 
+const migrateProductImagesButton = document.getElementById("migrateProductImagesButton");
+const productImageMigrationStatus = document.getElementById("productImageMigrationStatus");
+if (migrateProductImagesButton) {
+    migrateProductImagesButton.addEventListener("click", async function() {
+        if (!adminToken) {
+            alert("Sign in above before moving product photos to Storage.");
+            return;
+        }
+        if (!window.confirm("This moves existing product photos to the public product-images bucket and replaces their inline database data with URLs. All gallery photos will be preserved. Continue?")) return;
+
+        migrateProductImagesButton.disabled = true;
+        if (productImageMigrationStatus) productImageMigrationStatus.textContent = "Starting image migration…";
+        try {
+            let remainingProducts = 1;
+            while (remainingProducts > 0) {
+                const response = await adminRequest("/api/admin/migrate-images", {
+                    method: "POST",
+                    body: JSON.stringify({ limit: 10 })
+                });
+                if (!response) return;
+                const result = await response.json();
+                remainingProducts = Number(result.remainingProducts) || 0;
+                if (productImageMigrationStatus) {
+                    productImageMigrationStatus.textContent = "Moved " + Number(result.migratedImages || 0) + " photos in this batch. " + remainingProducts.toLocaleString() + " products remain.";
+                }
+                if (remainingProducts > 0 && Number(result.migratedProducts) === 0) {
+                    throw new Error("The migration made no progress. Check the API logs and Storage bucket configuration.");
+                }
+            }
+            if (productImageMigrationStatus) productImageMigrationStatus.textContent = "All existing product photos are in Storage. Refresh the catalog to see the updated image URLs.";
+            await loadAdminProducts();
+        } catch (error) {
+            if (productImageMigrationStatus) productImageMigrationStatus.textContent = error.message || "Image migration failed. Check the API logs.";
+        } finally {
+            migrateProductImagesButton.disabled = false;
+        }
+    });
+}
+
 // The filter currently selected from the dashboard. Keeping this value means
 // a status update refreshes the same view instead of unexpectedly switching
 // the administrator to a different category.
@@ -204,27 +243,68 @@ if (cancelProductFormButton && addProductSection && productForm) {
 
 // The API accepts up to 25 MB of JSON. A base64 data URL is about 33% larger
 // than the source image, so cap the selected image before trying to upload it.
-const MAX_PRODUCT_IMAGE_BYTES = 5 * 1024 * 1024;
+const MAX_PRODUCT_IMAGE_BYTES = 15 * 1024 * 1024;
 const MAX_PRODUCT_IMAGE_COUNT = 8;
-const MAX_PRODUCT_IMAGE_TOTAL_BYTES = 20 * 1024 * 1024;
+const MAX_PRODUCT_IMAGE_TOTAL_BYTES = 40 * 1024 * 1024;
+const MAX_PRODUCT_IMAGE_PAYLOAD_BYTES = 16 * 1024 * 1024;
 function getProductImages(product) {
     const images = Array.isArray(product && product.images) ? product.images : [];
     const legacy = product && (product.image_url || product.image);
-    return [...new Set([...images, legacy].filter(value => typeof value === "string" && value.trim()))];
+    return [...new Set([legacy, ...images].filter(value => typeof value === "string" && value.trim()))];
 }
 function validateImageFiles(files) {
     if (files.length > MAX_PRODUCT_IMAGE_COUNT) { alert("Please choose no more than " + MAX_PRODUCT_IMAGE_COUNT + " images."); return false; }
-    if (files.some(file => file.size > MAX_PRODUCT_IMAGE_BYTES)) { alert("Each image must be smaller than 5 MB."); return false; }
-    if (files.reduce((sum, file) => sum + file.size, 0) > MAX_PRODUCT_IMAGE_TOTAL_BYTES) { alert("The selected images must total less than 20 MB."); return false; }
+    if (files.some(file => !/^image\/(jpeg|png|webp|avif|gif|tiff|svg\+xml)$/i.test(file.type))) { alert("Use JPEG, PNG, WebP, AVIF, GIF, TIFF, or SVG product images."); return false; }
+    if (files.some(file => file.size > MAX_PRODUCT_IMAGE_BYTES)) { alert("Each original image must be smaller than 15 MB."); return false; }
+    if (files.reduce((sum, file) => sum + file.size, 0) > MAX_PRODUCT_IMAGE_TOTAL_BYTES) { alert("The selected original images must total less than 40 MB."); return false; }
     return true;
 }
 function readImageFiles(files) {
-    return Promise.all(files.map(file => new Promise((resolve, reject) => {
-        const reader = new FileReader();
-        reader.onload = event => resolve(event.target.result);
-        reader.onerror = reject;
-        reader.readAsDataURL(file);
-    })));
+    function readDataUrl(file) {
+        return new Promise((resolve, reject) => {
+            const reader = new FileReader();
+            reader.onload = event => resolve(event.target.result);
+            reader.onerror = reject;
+            reader.readAsDataURL(file);
+        });
+    }
+
+    async function optimize(file) {
+        if (!/^image\/(jpeg|png|webp|avif)$/i.test(file.type)) return readDataUrl(file);
+
+        const objectUrl = URL.createObjectURL(file);
+        try {
+            const source = await new Promise((resolve, reject) => {
+                const image = new Image();
+                image.onload = () => resolve(image);
+                image.onerror = () => reject(new Error("Could not read the selected image."));
+                image.src = objectUrl;
+            });
+            const maxDimension = 1400;
+            const scale = Math.min(1, maxDimension / Math.max(source.naturalWidth, source.naturalHeight));
+            const canvas = document.createElement("canvas");
+            canvas.width = Math.max(1, Math.round(source.naturalWidth * scale));
+            canvas.height = Math.max(1, Math.round(source.naturalHeight * scale));
+            const context = canvas.getContext("2d");
+            if (!context) return readDataUrl(file);
+            context.drawImage(source, 0, 0, canvas.width, canvas.height);
+            const optimized = await new Promise(resolve => canvas.toBlob(resolve, "image/webp", 0.82));
+            return readDataUrl(optimized || file);
+        } finally {
+            URL.revokeObjectURL(objectUrl);
+        }
+    }
+
+    const images = [];
+    for (const file of files) images.push(await optimize(file));
+    const payloadBytes = images.reduce(function(total, value) {
+        const encoded = String(value).split(",", 2)[1] || "";
+        return total + Math.floor(encoded.length * 0.75);
+    }, 0);
+    if (payloadBytes > MAX_PRODUCT_IMAGE_PAYLOAD_BYTES) {
+        throw new Error("The optimized images are still too large to upload together. Choose fewer images or reduce their size.");
+    }
+    return images;
 }
 
 productForm.addEventListener("submit", async function(event) {
@@ -242,7 +322,7 @@ productForm.addEventListener("submit", async function(event) {
     if (!validateImageFiles(files)) { productForm.dataset.submitting = "false"; if (submitButton) { submitButton.disabled = false; submitButton.textContent = "Add Product"; } return; }
     try {
         const images = await readImageFiles(files);
-        const product = { name, price, stock, category, colors, image: images[0] || "", images };
+        const product = { name, price, stock, category, colors, image: "", images };
         const response = await adminRequest("/api/products", { method: "POST", body: JSON.stringify(product) });
         if (!response) return;
         products.unshift(await response.json());
@@ -575,7 +655,7 @@ editProductForm.addEventListener(
                 product.images = images;
                 product.image = images[0] || "";
                 saveEditedProduct(index);
-            }).catch(function() { alert("Could not read the selected images."); });
+            }).catch(function(error) { alert(error.message || "Could not process the selected images."); });
         } else {
             saveEditedProduct(index);
         }
@@ -600,7 +680,7 @@ async function saveEditedProduct(index) {
     try {
         const response = await adminRequest("/api/products/" + product.id, {
             method: "PUT",
-            body: JSON.stringify(product)
+            body: JSON.stringify({ ...product, image: "", images: getProductImages(product) })
         });
 
         if (!response) return;
@@ -2359,7 +2439,7 @@ if (imageForm) imageForm.addEventListener("submit", async function(event) {
     try {
         const newImages = await readImageFiles(files);
         const images = [...new Set([...imageDraft, ...newImages])];
-        const response = await adminRequest("/api/products/" + product.id, { method: "PUT", body: JSON.stringify({ ...product, image: images[0] || "", images }) });
+        const response = await adminRequest("/api/products/" + product.id, { method: "PUT", body: JSON.stringify({ ...product, image: "", images }) });
         if (!response) return;
         products[index] = await response.json();
         displayAdminProducts();
@@ -2511,7 +2591,7 @@ body.addEventListener("click", async function(event) {
         button.disabled = true;
         button.textContent = "Saving...";
         try {
-            const response = await adminRequest("/api/products/" + product.id, { method: "PUT", body: JSON.stringify({ name: product.name, price: product.price, stock: value, category: product.category, colors: product.colors || [], image: product.image || product.image_url || "", images: Array.isArray(product.images) ? product.images : [], featured: Boolean(product.featured), salePrice: product.sale_price ?? product.salePrice ?? null }) });
+            const response = await adminRequest("/api/products/" + product.id, { method: "PUT", body: JSON.stringify({ name: product.name, price: product.price, stock: value, category: product.category, colors: product.colors || [], image: "", images: getProductImages(product), featured: Boolean(product.featured), salePrice: product.sale_price ?? product.salePrice ?? null }) });
             if (!response) return;
             const updated = await response.json();
             Object.assign(product, updated);
