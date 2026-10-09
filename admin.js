@@ -2057,8 +2057,11 @@ function renderSharedOrders(filter = activeOrderFilter) {
 
     visibleOrders.forEach(function(order) {
         const productsHtml = (order.products || []).map(function(product) {
-            return "<p>" + product.name + " × " + product.quantity + " — KSh " +
-                (Number(product.price) * Number(product.quantity)).toLocaleString() + "</p>";
+            const image = product.image || product.image_url || (Array.isArray(product.images) && product.images[0]) || "rays-enterprise-catalog-logo.jpg";
+            const safeImage = String(image).replace(/&/g, "&amp;").replace(/\"/g, "&quot;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
+            const safeName = String(product.name || "Product").replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
+            return "<div class='admin-order-item'><img class='admin-order-item-image' src=\"" + safeImage + "\" alt=\"" + safeName + "\" loading='lazy' onerror=\"this.onerror=null;this.src='rays-enterprise-catalog-logo.jpg'\"><div><strong>" + safeName + "</strong><span> × " + product.quantity + " — KSh " +
+                (Number(product.price) * Number(product.quantity)).toLocaleString() + "</span></div></div>";
         }).join("");
 
         const card = document.createElement("article");

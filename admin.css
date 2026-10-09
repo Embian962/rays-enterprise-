@@ -678,6 +678,19 @@ body:not(.admin-authenticated) main {
     padding: 18px 20px;
 }
 
+.admin-order-item {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 10px 0;
+    border-bottom: 1px solid #edf2f7;
+}
+
+.admin-order-item:last-child { border-bottom: 0; }
+.admin-order-item > div { display: flex; flex-direction: column; gap: 4px; }
+.admin-order-item span { color: #475569; font-size: .9rem; }
+.admin-order-item-image { width: 64px; height: 64px; flex: 0 0 64px; border-radius: 10px; object-fit: cover; background: #f1f5f4; }
+
 .admin-order-items > p {
     display: flex;
     justify-content: space-between;
