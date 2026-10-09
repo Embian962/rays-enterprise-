@@ -563,6 +563,9 @@ function addToCart(productName, color) {
             name:
                 product.name,
 
+            image:
+                (Array.isArray(product.images) && product.images[0]) || product.image_url || product.image || "",
+
             price:
                 Number(product.price),
 
@@ -752,6 +755,14 @@ const cartItemCount =
             </div>
 
         `;
+
+        const productImage = document.createElement("img");
+        productImage.className = "cart-item-image";
+        productImage.src = product.image || "rays-enterprise-catalog-logo.jpg";
+        productImage.alt = product.name || "Product";
+        productImage.loading = "lazy";
+        productImage.onerror = function() { this.onerror = null; this.src = "rays-enterprise-catalog-logo.jpg"; };
+        item.prepend(productImage);
 
 
         cartItems.appendChild(item);
@@ -1697,6 +1708,13 @@ function showOrderConfirmation(order) {
                     row.className =
                         "confirmation-product";
 
+                    const productImage = document.createElement("img");
+                    productImage.className = "order-product-image";
+                    productImage.src = product.image || product.image_url || (Array.isArray(product.images) && product.images[0]) || "rays-enterprise-catalog-logo.jpg";
+                    productImage.alt = product.name || "Product";
+                    productImage.loading = "lazy";
+                    productImage.onerror = function() { this.onerror = null; this.src = "rays-enterprise-catalog-logo.jpg"; };
+
 
                     const itemTotal =
                         Number(product.price) *
@@ -1720,6 +1738,7 @@ function showOrderConfirmation(order) {
                                 ×
                                 ${product.quantity}
                             </span>
+                            ${product.color ? `<span>Colour: ${product.color}</span>` : ""}
 
                         </div>
 
@@ -1729,6 +1748,8 @@ function showOrderConfirmation(order) {
                         </strong>
 
                     `;
+
+                    row.prepend(productImage);
 
 
                     confirmationProducts.appendChild(
@@ -1936,6 +1957,10 @@ function displayMyOrders() {
                 order.products.forEach(
                     function(product) {
 
+                        const imageUrl = product.image || product.image_url || (Array.isArray(product.images) && product.images[0]) || "rays-enterprise-catalog-logo.jpg";
+                        const safeImageUrl = String(imageUrl).replace(/&/g, "&amp;").replace(/\"/g, "&quot;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
+                        const safeProductName = String(product.name || "Product").replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
+
                         const itemTotal =
                             Number(product.price) *
                             Number(product.quantity);
@@ -1947,10 +1972,12 @@ function displayMyOrders() {
                                 class="my-order-product"
                             >
 
+                                <img class="order-product-image" src="${safeImageUrl}" alt="${safeProductName}" loading="lazy" onerror="this.onerror=null;this.src='rays-enterprise-catalog-logo.jpg'">
+
                                 <div>
 
                                     <strong>
-                                        ${product.name}
+                                        ${safeProductName}
                                     </strong>
 
                                     <span>
@@ -1960,6 +1987,7 @@ function displayMyOrders() {
                                         ×
                                         ${product.quantity}
                                     </span>
+                                    ${product.color ? `<span>Colour: ${product.color}</span>` : ""}
 
                                 </div>
 
@@ -2357,6 +2385,12 @@ if (checkoutForm) {
 
                                 name:
                                     product.name,
+
+                                image:
+                                    product.image || product.image_url || (Array.isArray(product.images) && product.images[0]) || "",
+
+                                color:
+                                    product.color || "",
 
                                 price:
                                     product.price,
