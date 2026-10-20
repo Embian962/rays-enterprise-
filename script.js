@@ -1160,13 +1160,26 @@ async function loadProducts() {
 
     {
         try {
-            const response = await fetch(apiUrl + "/api/products?v=" + Date.now());
+            const response = await fetch(apiUrl + "/api/products?catalog=1&v=" + Date.now());
 
             if (!response.ok) {
                 throw new Error("Could not load products from the store server.");
             }
 
             fetchedProducts = await response.json();
+            const resolveCatalogImageUrl = function(imageUrl) {
+                return typeof imageUrl === "string" && imageUrl.startsWith("/")
+                    ? apiUrl + imageUrl
+                    : imageUrl;
+            };
+            fetchedProducts = fetchedProducts.map(function(product) {
+                return {
+                    ...product,
+                    image: resolveCatalogImageUrl(product.image),
+                    image_url: resolveCatalogImageUrl(product.image_url),
+                    images: Array.isArray(product.images) ? product.images.map(resolveCatalogImageUrl) : []
+                };
+            });
             try { saveProducts(fetchedProducts); } catch (storageError) { console.warn("Catalog loaded but could not be cached locally.", storageError); }
         } catch (error) {
             console.warn("Using saved catalog because the store server is unavailable.", error);
