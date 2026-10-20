@@ -159,6 +159,17 @@ const formatBusinessDate = value => new Intl.DateTimeFormat("en-KE", {
   dateStyle: "medium",
   timeStyle: "short"
 }).format(new Date(value));
+const serializeOrderProducts = products => (Array.isArray(products) ? products : []).map(product => {
+  const id = encodeURIComponent(product.id || product.productId || "");
+  const imagePath = index => id ? `/api/products/${id}/images/${index}` : "";
+  const resolveImage = (value, index) => typeof value === "string" && value.startsWith("data:")
+    ? imagePath(index)
+    : value;
+  const images = Array.isArray(product.images) ? product.images.map(resolveImage) : [];
+  const image = resolveImage(product.image || product.image_url || images[0] || "", 0);
+  return { ...product, image, image_url: image, images };
+});
+
 const serializeOrder = order => ({
   id: order.id,
   orderNumber: order.order_number ? "No." + String(order.order_number).padStart(3, "0") : "No." + String(order.id).padStart(3, "0"),
@@ -167,7 +178,7 @@ const serializeOrder = order => ({
   customerPhone: order.customer_phone,
   customerLocation: order.customer_location,
   customerNotes: order.customer_notes || "",
-  products: order.products,
+  products: serializeOrderProducts(order.products),
   total: Number(order.total),
   paymentMethod: order.payment_method,
   paymentStatus: order.payment_status,
