@@ -76,13 +76,24 @@ async function loadAdminProducts() {
 
         let fullProducts;
         try {
-            fullProducts = await fetchAdminProductList(base + "?v=" + Date.now(), 90000);
+            fullProducts = await fetchAdminProductList(base + "?catalog=1&v=" + Date.now(), 30000);
         } catch (firstImageError) {
             await new Promise(function(resolve) { setTimeout(resolve, 1500); });
-            fullProducts = await fetchAdminProductList(base + "?retry=1&v=" + Date.now(), 90000);
+            fullProducts = await fetchAdminProductList(base + "?catalog=1&retry=1&v=" + Date.now(), 30000);
         }
         if (Array.isArray(fullProducts)) {
-            products = fullProducts.map(function(product) { return { ...product, category: normalizeAdminProductCategory(product.category) }; });
+            products = fullProducts.map(function(product) {
+                const resolveImageUrl = function(value) {
+                    return typeof value === "string" && value.startsWith("/") ? apiUrl + value : value;
+                };
+                return {
+                    ...product,
+                    category: normalizeAdminProductCategory(product.category),
+                    image: resolveImageUrl(product.image),
+                    image_url: resolveImageUrl(product.image_url),
+                    images: Array.isArray(product.images) ? product.images.map(resolveImageUrl) : []
+                };
+            });
             try { saveProducts(fullProducts); } catch (storageError) { console.warn("Products loaded but could not be cached locally.", storageError); }
             displayAdminProducts();
             updateDashboard();
@@ -401,6 +412,8 @@ function displayAdminProducts() {
             <img
                 src="${product.image_url || product.image || "rays-enterprise-catalog-logo.jpg"}"
                 alt="${product.name}"
+                loading="lazy"
+                decoding="async"
                 style="
                     width: 150px;
                     height: 150px;
