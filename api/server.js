@@ -269,7 +269,8 @@ app.get("/health", asyncRoute(async (_req, res) => {
 app.post("/api/admin/login", (req, res) => {
   const { username, password } = req.body || {};
   const suppliedUsername = String(username || "").trim();
-  const suppliedPassword = String(password || "").trim();
+  // Treat passwords as exact strings; whitespace may be intentional.
+  const suppliedPassword = String(password || "");
 
   if (!process.env.ADMIN_USERNAME || !process.env.ADMIN_PASSWORD || !process.env.ADMIN_SESSION_SECRET) {
     return res.status(503).json({ error: "Admin sign-in is not configured yet." });

@@ -188,18 +188,37 @@ function updateAdminLoginStatus() {
 if (adminLoginForm) {
     adminLoginForm.addEventListener("submit", async function(event) {
         event.preventDefault();
+        const submitButton = adminLoginForm.querySelector('button[type="submit"]');
+        if (submitButton) submitButton.disabled = true;
+        if (adminLoginStatus) adminLoginStatus.textContent = "Connecting to the sign-in service…";
         try {
-            const response = await fetch(getApiUrl() + "/api/admin/login", {
+            const controller = new AbortController();
+            const timeout = window.setTimeout(function() { controller.abort(); }, 60000);
+            let response;
+            try {
+                response = await fetch(getApiUrl() + "/api/admin/login", {
                 method: "POST",
                 headers: { "Content-Type": "application/json" },
+                signal: controller.signal,
                 body: JSON.stringify({
                     username: document.getElementById("adminUsername").value.trim(),
-                    password: document.getElementById("adminPassword").value.trim()
+                    // Passwords are exact strings. Trimming here can silently
+                    // alter valid credentials when a password contains spaces.
+                    password: document.getElementById("adminPassword").value
                 })
-            });
-            const body = await response.json().catch(function() { return {}; });
+                });
+            } finally {
+                window.clearTimeout(timeout);
+            }
+            const responseText = await response.text();
+            let body = {};
+            try { body = responseText ? JSON.parse(responseText) : {}; } catch (parseError) { /* handled below */ }
             if (!response.ok) {
-                throw new Error(body.error || "The sign-in service returned an unexpected response.");
+                if (body.error) throw new Error(body.error);
+                if (response.status === 401) throw new Error("The username or password was not accepted. Check spelling and try again.");
+                if (response.status === 503) throw new Error("The sign-in service is temporarily unavailable or not configured. Please contact the site administrator.");
+                if (response.status >= 500) throw new Error("The sign-in service had a server error (" + response.status + "). Please try again shortly.");
+                throw new Error("The sign-in service returned an unexpected response (" + response.status + "). Please try again.");
             }
             if (!body.token) throw new Error("The sign-in service did not return a session token.");
             adminToken = body.token;
@@ -208,11 +227,14 @@ if (adminLoginForm) {
             updateAdminLoginStatus();
             loadSharedAdminData();
         } catch (error) {
-            const message = error instanceof TypeError && error.message === "Failed to fetch"
-                ? "Could not reach the sign-in service. Please try again in a moment."
-                : error.message;
+            let message = error && error.name === "AbortError"
+                ? "The sign-in request timed out while waiting for the server. Check your connection and try again."
+                : error instanceof TypeError
+                    ? "Could not reach the sign-in service. Check your internet connection and reload the admin page."
+                    : (error && error.message) || "Sign-in failed unexpectedly. Please try again.";
             if (adminLoginStatus) adminLoginStatus.textContent = message;
-            alert(message);
+        } finally {
+            if (submitButton) submitButton.disabled = false;
         }
     });
 }
