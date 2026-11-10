@@ -234,7 +234,8 @@
     const addQuoteItem = function() {
         const row = document.createElement("div");
         row.className = "document-item-row";
-        row.innerHTML = `<div class="quote-product-picker"><label><span>Search products</span><input class="quote-product-search" type="search" placeholder="Type a product name or ID" autocomplete="off"><button class="quote-product-search-button" type="button">Search</button></label><label>Product<select class="quote-product" required><option value="">Select a product</option></select></label><p class="quote-product-search-status" role="status" aria-live="polite"></p></div><label>Quantity<input class="quote-quantity" type="number" min="1" step="1" value="1" required></label><label>Unit price (KSh)<input class="quote-price" type="number" min="0" step="0.01" required></label><strong class="quote-line-total">KSh 0</strong><button class="remove-quote-item" type="button" aria-label="Remove product">Remove</button>`;
+        const searchId = "quoteProductSearch" + Math.random().toString(36).slice(2);
+        row.innerHTML = `<div class="quote-product-picker"><label for="${searchId}">Search products</label><div class="quote-product-search-controls"><input class="quote-product-search" id="${searchId}" type="search" placeholder="Type a product name or ID" autocomplete="off"><button class="quote-product-search-button" type="button">Search</button></div><label>Product<select class="quote-product" required><option value="">Select a product</option></select></label><p class="quote-product-search-status" role="status" aria-live="polite"></p></div><label>Quantity<input class="quote-quantity" type="number" min="1" step="1" value="1" required></label><label>Unit price (KSh)<input class="quote-price" type="number" min="0" step="0.01" required></label><strong class="quote-line-total">KSh 0</strong><button class="remove-quote-item" type="button" aria-label="Remove product">Remove</button>`;
         const search = row.querySelector(".quote-product-search");
         const select = row.querySelector(".quote-product");
         const status = row.querySelector(".quote-product-search-status");
@@ -251,6 +252,7 @@
         };
         filterProducts();
         row.querySelector(".quote-product-search-button").addEventListener("click", filterProducts);
+        search.addEventListener("input", filterProducts);
         search.addEventListener("keydown", function(event) { if (event.key === "Enter") { event.preventDefault(); filterProducts(); select.focus(); } });
         select.addEventListener("change", function(event) {
             const product = productOptions.find(item => String(item.id) === event.target.value);

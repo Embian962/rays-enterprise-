@@ -817,7 +817,7 @@ body.edit-editor-open::after { z-index: 1999; pointer-events: none; }
 .offline-product-empty { padding: 12px; color: #64748b; }
 
 /* Manager dashboard layout */
-.admin-sidebar { position: fixed; left: 0; top: 0; bottom: 0; width: 230px; padding: 28px 16px; background: #0f172a; color: #e2e8f0; z-index: 20; }
+.admin-sidebar { position: fixed; left: 0; top: 0; bottom: 0; width: 230px; max-height: 100vh; overflow-y: auto; overscroll-behavior-y: contain; scrollbar-gutter: stable; padding: 28px 16px; background: #0f172a; color: #e2e8f0; z-index: 20; }
 .sidebar-brand { font-weight: 800; font-size: 18px; color: #fff; margin: 8px 12px 30px; }
 .admin-sidebar nav { display: grid; gap: 6px; }
 .admin-sidebar a { color: #cbd5e1; text-decoration: none; padding: 12px 14px; border-radius: 9px; font-size: 14px; font-weight: 600; }
@@ -827,7 +827,7 @@ main { width: min(94%, 1400px); margin: 30px auto; }
 header { margin-left: -230px; padding-left: calc(6% + 230px); }
 .admin-primary-action { margin: 0 0 18px; }
 @media (max-width: 760px) {
-  .admin-sidebar { position: static; width: 100%; padding: 12px; }
+  .admin-sidebar { position: static; width: 100%; max-height: none; overflow-y: visible; overscroll-behavior-y: auto; padding: 12px; }
   .sidebar-brand { margin: 4px 8px 10px; }
   .admin-sidebar nav { display: flex; overflow-x: auto; gap: 4px; }
   .admin-sidebar a { white-space: nowrap; padding: 9px 10px; }
@@ -913,8 +913,7 @@ body.admin-dark .admin-install-help-card h2 { color: #f8fafc; }.inventory-stock-
 .document-item-list { display: grid; gap: 10px; }
 .document-item-row { display: grid; grid-template-columns: minmax(190px, 1.6fr) minmax(90px, .55fr) minmax(120px, .8fr) minmax(105px, .7fr) auto; align-items: end; gap: 10px; padding: 12px; border: 1px solid #e2e8f0; border-radius: 10px; background: #f8fafc; }
 .quote-product-picker { display: grid; gap: 8px; min-width: 0; }
-.quote-product-picker > label:first-child { display: grid; grid-template-columns: minmax(0, 1fr) auto; align-items: end; gap: 6px; }
-.quote-product-picker > label:first-child > span { grid-column: 1 / -1; }
+.quote-product-search-controls { display: grid; grid-template-columns: minmax(0, 1fr) auto; align-items: center; gap: 6px; }
 .quote-product-search-button { min-height: 42px; padding: 8px 12px; border: 0; border-radius: 8px; color: #fff; background: #0f766e; font: inherit; font-weight: 700; cursor: pointer; }
 .quote-product-search-button:hover, .quote-product-search-button:focus-visible { background: #115e59; }
 .quote-product-search-status { min-height: 16px; margin: -4px 0 0; color: #64748b; font-size: 12px; font-weight: 500; }
