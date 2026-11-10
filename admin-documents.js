@@ -234,9 +234,31 @@
     const addQuoteItem = function() {
         const row = document.createElement("div");
         row.className = "document-item-row";
-        const options = productOptions.map(product => `<option value="${escapeHtml(product.id)}" data-price="${escapeHtml(product.price)}">${escapeHtml(product.name)} · ${money(product.price)}</option>`).join("");
-        row.innerHTML = `<label>Product<select class="quote-product" required><option value="">Select a product</option>${options}</select></label><label>Quantity<input class="quote-quantity" type="number" min="1" step="1" value="1" required></label><label>Unit price (KSh)<input class="quote-price" type="number" min="0" step="0.01" required></label><strong class="quote-line-total">KSh 0</strong><button class="remove-quote-item" type="button" aria-label="Remove product">Remove</button>`;
-        row.querySelector(".quote-product").addEventListener("change", function(event) { row.querySelector(".quote-price").value = event.target.selectedOptions[0]?.dataset.price || ""; updateQuoteTotal(); });
+        row.innerHTML = `<div class="quote-product-picker"><label><span>Search products</span><input class="quote-product-search" type="search" placeholder="Type a product name or ID" autocomplete="off"><button class="quote-product-search-button" type="button">Search</button></label><label>Product<select class="quote-product" required><option value="">Select a product</option></select></label><p class="quote-product-search-status" role="status" aria-live="polite"></p></div><label>Quantity<input class="quote-quantity" type="number" min="1" step="1" value="1" required></label><label>Unit price (KSh)<input class="quote-price" type="number" min="0" step="0.01" required></label><strong class="quote-line-total">KSh 0</strong><button class="remove-quote-item" type="button" aria-label="Remove product">Remove</button>`;
+        const search = row.querySelector(".quote-product-search");
+        const select = row.querySelector(".quote-product");
+        const status = row.querySelector(".quote-product-search-status");
+        const filterProducts = function() {
+            const query = search.value.trim().toLocaleLowerCase();
+            const selectedId = select.value;
+            const matches = productOptions.filter(product => String(product.name || "").toLocaleLowerCase().includes(query) || String(product.id).toLocaleLowerCase().includes(query));
+            const selectedProduct = productOptions.find(product => String(product.id) === selectedId);
+            const visibleProducts = selectedProduct && !matches.some(product => String(product.id) === selectedId) ? [selectedProduct, ...matches] : matches;
+            select.replaceChildren(new Option("Select a product", ""));
+            visibleProducts.forEach(product => select.add(new Option(`${product.name} · ${money(product.price)}`, String(product.id))));
+            select.value = selectedId;
+            status.textContent = query ? `${matches.length} product${matches.length === 1 ? "" : "s"} found.` : `${productOptions.length} products available.`;
+        };
+        filterProducts();
+        row.querySelector(".quote-product-search-button").addEventListener("click", filterProducts);
+        search.addEventListener("keydown", function(event) { if (event.key === "Enter") { event.preventDefault(); filterProducts(); select.focus(); } });
+        select.addEventListener("change", function(event) {
+            const product = productOptions.find(item => String(item.id) === event.target.value);
+            row.querySelector(".quote-price").value = product?.price ?? "";
+            search.value = "";
+            filterProducts();
+            updateQuoteTotal();
+        });
         row.querySelectorAll("input").forEach(input => input.addEventListener("input", updateQuoteTotal));
         row.querySelector(".remove-quote-item").addEventListener("click", function() { row.remove(); updateQuoteTotal(); });
         quoteRows.appendChild(row);
