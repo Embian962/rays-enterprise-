@@ -378,7 +378,7 @@ function displayAdminProducts() {
         productItem.innerHTML = `
 
             <img
-                src="${product.image_url || product.image || "rays-enterprise-catalog-logo.jpg"}"
+                src="${product.image_url || product.image || getProductImages(product)[0] || "rays-enterprise-catalog-logo.jpg"}"
                 alt="${product.name}"
                 loading="lazy"
                 decoding="async"

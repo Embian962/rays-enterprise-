@@ -306,6 +306,8 @@ const normalizeProductImages = (images, image, imageUrl) => {
 };
 
 const PRODUCT_IMAGE_BUCKET = "product-images";
+const INLINE_IMAGE_REFERENCE_PREFIX = "__rays_inline_image_";
+const isInlineImageReference = value => typeof value === "string" && value.startsWith(INLINE_IMAGE_REFERENCE_PREFIX) && value.endsWith("__");
 const isDataImage = value => typeof value === "string" && value.startsWith("data:");
 const hasInlineProductImages = "COALESCE(image, '') LIKE 'data:%' OR EXISTS (SELECT 1 FROM jsonb_array_elements_text(CASE WHEN jsonb_typeof(images) = 'array' THEN images ELSE '[]'::jsonb END) AS image_value(value) WHERE image_value.value LIKE 'data:%')";
 
@@ -387,25 +389,42 @@ app.get("/api/products", asyncRoute(async (req, res) => {
     const { rows } = await pool.query("SELECT id, name, price, stock, category, colors, featured, sale_price, created_at, updated_at, (COALESCE(jsonb_array_length(images), 0) > 0 OR COALESCE(image, '') <> '') AS has_image FROM products ORDER BY created_at DESC");
     return res.json(rows.map(product => ({ ...product, images: [], image: "", has_image: Boolean(product.has_image) })));
   }
+  if (String(req.query.catalog || "") === "1") {
+    // Never pull legacy base64 photos across the database connection just to
+    // replace them with lazy image URLs below. The placeholder keeps gallery
+    // order/deduplication intact without moving the image bytes.
+    const { rows } = await pool.query(`
+      SELECT id, name, price, stock, category, colors, featured, sale_price, created_at, updated_at,
+        CASE WHEN COALESCE(image, '') LIKE 'data:%' THEN $1 || md5(image) || '__' ELSE image END AS image,
+        COALESCE((
+          SELECT jsonb_agg(
+            CASE WHEN image_value.value LIKE 'data:%' THEN $1 || md5(image_value.value) || '__' ELSE image_value.value END
+            ORDER BY image_value.ordinality
+          )
+          FROM jsonb_array_elements_text(
+            CASE WHEN jsonb_typeof(images) = 'array' THEN images ELSE '[]'::jsonb END
+          ) WITH ORDINALITY AS image_value(value, ordinality)
+        ), '[]'::jsonb) AS images
+      FROM products ORDER BY created_at DESC
+    `, [INLINE_IMAGE_REFERENCE_PREFIX]);
+    const catalogProducts = rows.map(product => {
+      const normalized = publicProduct(product);
+      const imagePath = index => "/api/products/" + encodeURIComponent(product.id) + "/images/" + index + "?v=" + encodeURIComponent(product.updated_at || "");
+      const images = normalized.images.map((image, index) => isInlineImageReference(image) ? imagePath(index) : image);
+      const primaryIndex = normalized.images.indexOf(normalized.image);
+      const primary = isInlineImageReference(normalized.image)
+        ? imagePath(primaryIndex >= 0 ? primaryIndex : 0)
+        : images[0] || normalized.image || "";
+      return { ...normalized, image: primary, images };
+    });
+    return res.set("Cache-Control", "no-store").json(catalogProducts);
+  }
   const { rows } = await pool.query(`
     SELECT id, name, price, stock, category, colors, featured, sale_price, created_at, updated_at,
       image, images
     FROM products ORDER BY created_at DESC
   `);
   const products = rows.map(publicProduct);
-  if (String(req.query.catalog || "") === "1") {
-    const catalogProducts = products.map(product => {
-      const images = product.images.map((image, index) => {
-        if (!image.startsWith("data:")) return image;
-        return "/api/products/" + encodeURIComponent(product.id) + "/images/" + index + "?v=" + encodeURIComponent(product.updated_at || "");
-      });
-      const primary = product.image && product.image.startsWith("data:")
-        ? "/api/products/" + encodeURIComponent(product.id) + "/images/0?v=" + encodeURIComponent(product.updated_at || "")
-        : images[0] || product.image || "";
-      return { ...product, image: primary, images };
-    });
-    return res.set("Cache-Control", "no-store").json(catalogProducts);
-  }
   res.json(products);
 }));
 
@@ -414,18 +433,55 @@ app.get("/api/products", asyncRoute(async (req, res) => {
 app.get("/api/products/:id/images/:index", asyncRoute(async (req, res) => {
   const index = Number.parseInt(req.params.index, 10);
   if (!Number.isInteger(index) || index < 0) return res.status(404).end();
-  const { rows } = await pool.query("SELECT * FROM products WHERE id=$1", [req.params.id]);
+  // Select only the requested photo rather than transferring every gallery
+  // image (which may include large legacy base64 strings) for this request.
+  const { rows } = await pool.query(`
+    WITH image_candidates AS (
+      SELECT COALESCE(NULLIF(image_url, ''), NULLIF(image, '')) AS value, 0::bigint AS ordinal
+      FROM products WHERE id = $1
+      UNION ALL
+      SELECT image_value.value, image_value.ordinality::bigint AS ordinal
+      FROM products
+      CROSS JOIN LATERAL jsonb_array_elements_text(
+        CASE WHEN jsonb_typeof(images) = 'array' THEN images ELSE '[]'::jsonb END
+      ) WITH ORDINALITY AS image_value(value, ordinality)
+      WHERE id = $1
+    ), normalized_images AS (
+      SELECT value, MIN(ordinal) AS ordinal
+      FROM image_candidates
+      WHERE value IS NOT NULL AND BTRIM(value) <> ''
+      GROUP BY value
+    ), indexed_images AS (
+      SELECT value, ROW_NUMBER() OVER (ORDER BY ordinal) - 1 AS image_index
+      FROM normalized_images
+    )
+    SELECT product.updated_at, indexed.value AS image
+    FROM products AS product
+    LEFT JOIN indexed_images AS indexed ON indexed.image_index = $2
+    WHERE product.id = $1
+  `, [req.params.id, index]);
   const product = rows[0];
-  if (!product) return res.status(404).end();
-  const images = normalizeProductImages(product.images, product.image, product.image_url);
-  const image = images[index];
+  if (!product || !product.image) return res.status(404).end();
+  const image = product.image;
   if (!image) return res.status(404).end();
 
   const dataUrl = image.match(/^data:(image\/[a-zA-Z0-9.+-]+);base64,([\s\S]*)$/);
   if (dataUrl) {
-    const body = Buffer.from(dataUrl[2], "base64");
+    const input = Buffer.from(dataUrl[2], "base64");
+    let body = input;
+    let contentType = dataUrl[1];
+    try {
+      body = await sharp(input, { limitInputPixels: 50_000_000 })
+        .rotate()
+        .resize({ width: 1200, height: 1200, fit: "inside", withoutEnlargement: true })
+        .webp({ quality: 82, effort: 4 })
+        .toBuffer();
+      contentType = "image/webp";
+    } catch {
+      // Keep legacy images viewable if a historic file cannot be decoded.
+    }
     res.set({
-      "Content-Type": dataUrl[1],
+      "Content-Type": contentType,
       "Content-Length": String(body.length),
       "Cache-Control": "public, max-age=31536000, immutable",
       "Last-Modified": new Date(product.updated_at || Date.now()).toUTCString()
@@ -434,6 +490,7 @@ app.get("/api/products/:id/images/:index", asyncRoute(async (req, res) => {
   }
 
   if (!/^https?:\/\//i.test(image)) return res.status(404).end();
+  res.set("Cache-Control", "public, max-age=31536000, immutable");
   return res.redirect(302, image);
 }));
 
