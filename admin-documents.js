@@ -41,16 +41,184 @@
         printWindow.document.write(html);
         printWindow.document.close();
     };
+    const pdfSafeText = function(value) {
+        return String(value ?? "").normalize("NFKD").replace(/[\u0300-\u036f]/g, "").replace(/[^\x20-\x7e]/g, "?");
+    };
+    const pdfEscape = function(value) { return pdfSafeText(value).replace(/([\\()])/g, "\\$1"); };
+    const pdfWrap = function(value, maxLength) {
+        const words = pdfSafeText(value).split(/\s+/).filter(Boolean);
+        const lines = [];
+        let line = "";
+        words.forEach(function(word) {
+            while (word.length > maxLength) {
+                if (line) { lines.push(line); line = ""; }
+                lines.push(word.slice(0, maxLength));
+                word = word.slice(maxLength);
+            }
+            if (line && (line + " " + word).length > maxLength) { lines.push(line); line = word; }
+            else line = line ? line + " " + word : word;
+        });
+        if (line) lines.push(line);
+        return lines.length ? lines : [""];
+    };
+    const buildPdfFile = function(doc) {
+        const pages = [];
+        let commands = [];
+        let y = 0;
+        const text = function(x, baseline, value, size, bold) {
+            commands.push(`BT /${bold ? "F2" : "F1"} ${size || 10} Tf ${x} ${baseline} Td (${pdfEscape(value)}) Tj ET`);
+        };
+        const line = function(x1, y1, x2, y2) { commands.push(`0.72 w ${x1} ${y1} m ${x2} ${y2} l S`); };
+        const startPage = function(first) {
+            commands = [];
+            pages.push(commands);
+            y = 792;
+            const store = doc.store || {};
+            text(46, y, store.name || "Ray's Enterprise", 18, true);
+            y -= 18;
+            [store.address, store.phone && `Tel: ${store.phone}`, store.email && `Email: ${store.email}`].filter(Boolean).forEach(function(value) {
+                pdfWrap(value, 88).forEach(function(part) { text(46, y, part, 9, false); y -= 12; });
+            });
+            y -= 4;
+            line(46, y, 549, y);
+            y -= 27;
+            text(46, y, `${doc.kind} ${doc.number}${first ? "" : " (continued)"}`, 16, true);
+            text(380, y, dateText(doc.date), 9, false);
+            y -= 25;
+            if (first) {
+                text(46, y, `Customer: ${doc.customer?.name || "Walk-in customer"}`, 10, true);
+                y -= 15;
+                if (doc.customer?.phone) { text(46, y, `Phone: ${doc.customer.phone}`, 9, false); y -= 13; }
+                if (doc.customer?.email) { text(46, y, `Email: ${doc.customer.email}`, 9, false); y -= 13; }
+                text(320, y + (doc.customer?.phone || doc.customer?.email ? 28 : 0), `Service provider: ${doc.provider || ""}`, 9, false);
+                if (doc.reference) text(320, y + (doc.customer?.phone || doc.customer?.email ? 14 : -13), `Reference: ${doc.reference}`, 9, false);
+                if (doc.paymentMethod) text(320, y, `Payment: ${doc.paymentMethod}`, 9, false);
+                if (doc.paymentStatus) text(320, y - 13, `Status: ${doc.paymentStatus}`, 9, false);
+                y -= 18;
+            }
+            text(46, y, "Product", 9, true);
+            text(345, y, "Qty", 9, true);
+            text(390, y, "Unit price", 9, true);
+            text(482, y, "Amount", 9, true);
+            y -= 8;
+            line(46, y, 549, y);
+            y -= 17;
+        };
+        const ensureSpace = function(height) {
+            if (y - height < 60) startPage(false);
+        };
+        startPage(true);
+        (Array.isArray(doc.items) ? doc.items : []).forEach(function(item) {
+            const quantity = Number(item.quantity) || 0;
+            const unit = Number(item.unitPrice ?? item.price) || 0;
+            const amount = Number(item.lineTotal) || quantity * unit;
+            const nameLines = pdfWrap(item.productName || item.name || "Product", 43);
+            const rowHeight = nameLines.length * 14 + 8;
+            ensureSpace(rowHeight);
+            nameLines.forEach(function(part, index) { text(46, y - index * 13, part, 9, false); });
+            text(345, y, String(quantity), 9, false);
+            text(390, y, money(unit), 9, false);
+            text(482, y, money(amount), 9, false);
+            y -= rowHeight;
+            line(46, y + 4, 549, y + 4);
+        });
+        ensureSpace(44);
+        y -= 12;
+        text(390, y, `Total: ${money(doc.total)}`, 13, true);
+        y -= 25;
+        if (doc.paymentMethod) { ensureSpace(18); text(46, y, `Payment method: ${doc.paymentMethod}`, 9, false); y -= 14; }
+        if (doc.paymentStatus) { ensureSpace(18); text(46, y, `Payment status: ${doc.paymentStatus}`, 9, false); y -= 14; }
+        if (doc.notes) {
+            ensureSpace(32);
+            text(46, y, "Notes / terms", 10, true);
+            y -= 14;
+            pdfWrap(doc.notes, 88).forEach(function(part) { ensureSpace(14); text(46, y, part, 9, false); y -= 13; });
+        }
+        ensureSpace(35);
+        y -= 12;
+        line(46, y, 549, y);
+        text(46, y - 16, `Thank you for choosing ${(doc.store || {}).name || "Ray's Enterprise"}.`, 9, false);
+        pages.forEach(function(page, index) { text(500, 28, `Page ${index + 1} of ${pages.length}`, 8, false); });
+
+        const objects = [];
+        objects[0] = "<< /Type /Catalog /Pages 2 0 R >>";
+        const pageIds = pages.map((_, index) => 5 + index * 2);
+        objects[1] = `<< /Type /Pages /Kids [${pageIds.map(id => `${id} 0 R`).join(" ")}] /Count ${pages.length} >>`;
+        objects[2] = "<< /Type /Font /Subtype /Type1 /BaseFont /Helvetica /Encoding /WinAnsiEncoding >>";
+        objects[3] = "<< /Type /Font /Subtype /Type1 /BaseFont /Helvetica-Bold /Encoding /WinAnsiEncoding >>";
+        pages.forEach(function(page, index) {
+            const pageId = 5 + index * 2;
+            const streamId = pageId + 1;
+            const stream = page.join("\n");
+            objects[pageId - 1] = `<< /Type /Page /Parent 2 0 R /MediaBox [0 0 595 842] /Resources << /Font << /F1 3 0 R /F2 4 0 R >> >> /Contents ${streamId} 0 R >>`;
+            objects[streamId - 1] = `<< /Length ${stream.length} >>\nstream\n${stream}\nendstream`;
+        });
+        let pdf = "%PDF-1.4\n";
+        const offsets = [0];
+        objects.forEach(function(object, index) { offsets.push(pdf.length); pdf += `${index + 1} 0 obj\n${object}\nendobj\n`; });
+        const xrefOffset = pdf.length;
+        pdf += `xref\n0 ${objects.length + 1}\n0000000000 65535 f \n`;
+        offsets.slice(1).forEach(offset => { pdf += `${String(offset).padStart(10, "0")} 00000 n \n`; });
+        pdf += `trailer\n<< /Size ${objects.length + 1} /Root 1 0 R >>\nstartxref\n${xrefOffset}\n%%EOF`;
+        const bytes = Uint8Array.from(pdf, character => character.charCodeAt(0));
+        const filename = `${doc.kind}-${doc.number}`.replace(/[^a-z0-9_-]+/gi, "-") + ".pdf";
+        return new File([bytes], filename, { type: "application/pdf" });
+    };
+    const savePdfFile = function(file) {
+        const url = URL.createObjectURL(file);
+        const anchor = document.createElement("a");
+        anchor.href = url;
+        anchor.download = file.name;
+        anchor.click();
+        setTimeout(function() { URL.revokeObjectURL(url); }, 60000);
+    };
+    const makeDocumentActions = function(doc, printHandler, statusNode) {
+        const actions = document.createElement("div");
+        actions.className = "document-actions";
+        actions.innerHTML = '<button type="button" class="document-print-action">Print / PDF</button><button type="button" class="document-save-share-action">Save &amp; Share PDF</button><div class="document-pdf-options" hidden><button type="button" class="document-save-pdf-action">Save PDF</button><button type="button" class="document-share-pdf-action">Share PDF</button></div>';
+        actions.querySelector(".document-print-action").addEventListener("click", printHandler);
+        const options = actions.querySelector(".document-pdf-options");
+        let file = null;
+        actions.querySelector(".document-save-share-action").addEventListener("click", function() {
+            try {
+                file = buildPdfFile(doc);
+                options.hidden = false;
+                statusNode.textContent = `${file.name} is ready. Save it or share the PDF file.`;
+            } catch (error) { statusNode.textContent = `Could not create the PDF: ${error.message}`; }
+        });
+        actions.querySelector(".document-save-pdf-action").addEventListener("click", function() {
+            if (!file) return;
+            savePdfFile(file);
+            statusNode.textContent = `${file.name} downloaded.`;
+        });
+        actions.querySelector(".document-share-pdf-action").addEventListener("click", async function() {
+            if (!file) return;
+            if (navigator.share && navigator.canShare && navigator.canShare({ files: [file] })) {
+                try {
+                    await navigator.share({ files: [file], title: `${doc.kind} ${doc.number}`, text: `${doc.kind} ${doc.number} from ${(doc.store || {}).name || "Ray's Enterprise"}` });
+                    statusNode.textContent = "The PDF was shared using the device share menu.";
+                } catch (error) {
+                    if (error.name === "AbortError") statusNode.textContent = "Sharing cancelled. The PDF is still ready to save or share.";
+                    else statusNode.textContent = `Could not open file sharing: ${error.message}`;
+                }
+                return;
+            }
+            savePdfFile(file);
+            statusNode.textContent = "This browser cannot share PDF files directly. The PDF was downloaded; attach it in WhatsApp or Email.";
+        });
+        return actions;
+    };
     const formatQuote = function(quote) {
         const id = quote.quotation_number || "Q-" + String(quote.id).padStart(6, "0");
         const items = Array.isArray(quote.items) ? quote.items : [];
         const row = document.createElement("article");
         row.className = "document-history-card";
-        row.innerHTML = `<div><strong>${escapeHtml(id)} · ${escapeHtml(quote.customer_name)}</strong><small>${escapeHtml(dateText(quote.created_at))} · ${items.length} item${items.length === 1 ? "" : "s"}</small><small>Service provider: ${escapeHtml(quote.service_provider)}</small></div><strong>${money(quote.total)}</strong><button type="button" class="document-print-quote">Print / PDF</button>`;
-        row.querySelector("button").addEventListener("click", function() {
+        row.innerHTML = `<div><strong>${escapeHtml(id)} · ${escapeHtml(quote.customer_name)}</strong><small>${escapeHtml(dateText(quote.created_at))} · ${items.length} item${items.length === 1 ? "" : "s"}</small><small>Service provider: ${escapeHtml(quote.service_provider)}</small></div><strong>${money(quote.total)}</strong>`;
+        const doc = { kind: "Quotation", number: id, date: quote.created_at, customer: { name: quote.customer_name, phone: quote.customer_phone, email: quote.customer_email }, provider: quote.service_provider, items, total: quote.total, notes: quote.notes, store: quote.store_profile || window.currentStoreProfile };
+        row.appendChild(makeDocumentActions(doc, function() {
             const printWindow = openPrintWindow();
             writePrintWindow(printWindow, printableHtml("Quotation", id, quote.store_profile || window.currentStoreProfile, { name: quote.customer_name, phone: quote.customer_phone, email: quote.customer_email }, quote.service_provider, items, quote.total, { date: quote.created_at, notes: quote.notes }));
-        });
+        }, quoteStatus));
         return row;
     };
 
@@ -104,8 +272,6 @@
     });
     quoteForm?.addEventListener("submit", async function(event) {
         event.preventDefault();
-        const printWindow = openPrintWindow();
-        if (!printWindow) return;
         quoteStatus.textContent = "Saving quotation…";
         const submit = document.getElementById("saveQuotationButton");
         submit.disabled = true;
@@ -115,10 +281,9 @@
         });
         try {
             const quote = await apiRequest("/api/quotations", { method: "POST", body: JSON.stringify({ customerName: formData.get("customerName"), customerPhone: formData.get("customerPhone"), customerEmail: formData.get("customerEmail"), serviceProvider: formData.get("serviceProvider"), notes: formData.get("notes"), items }) });
-            quoteStatus.textContent = "Quotation saved. Use the print dialog to print or save it as a PDF.";
-            writePrintWindow(printWindow, printableHtml("Quotation", quote.quotation_number, quote.store_profile || window.currentStoreProfile, { name: quote.customer_name, phone: quote.customer_phone, email: quote.customer_email }, quote.service_provider, quote.items, quote.total, { date: quote.created_at, notes: quote.notes }));
+            quoteStatus.textContent = "Quotation saved. Choose Print / PDF, WhatsApp, or Email from the saved quotation.";
             quoteForm.reset(); quoteRows.replaceChildren(); addQuoteItem(); updateQuoteTotal(); await loadQuotations();
-        } catch (error) { printWindow.close(); quoteStatus.textContent = error.message; }
+        } catch (error) { quoteStatus.textContent = error.message; }
         finally { submit.disabled = false; }
     });
 
@@ -159,24 +324,21 @@
                 const card = document.createElement("article");
                 card.className = "document-history-card";
                 const itemSummary = source.items.map(item => `${item.productName} × ${item.quantity}`).join(", ");
-                card.innerHTML = `<div><strong>${escapeHtml(source.reference)} · ${escapeHtml(source.customer_name || "Walk-in customer")}</strong><small>${escapeHtml(dateText(source.created_at))} · ${escapeHtml(source.payment_method || "")}</small><small>${escapeHtml(itemSummary)}</small></div><strong>${money(source.total)}</strong><button type="button" class="receipt-source-action">${source.receipt_id ? "Print saved receipt" : "Create receipt"}</button>`;
+                card.innerHTML = `<div><strong>${escapeHtml(source.reference)} · ${escapeHtml(source.customer_name || "Walk-in customer")}</strong><small>${escapeHtml(dateText(source.created_at))} · ${escapeHtml(source.payment_method || "")}</small><small>${escapeHtml(itemSummary)}</small></div><strong>${money(source.total)}</strong><button type="button" class="receipt-source-action">${source.receipt_id ? "Open saved receipt" : "Create receipt"}</button>`;
                 card.querySelector("button").addEventListener("click", async function() {
-                    const printWindow = openPrintWindow();
-                    if (!printWindow) return;
                     if (source.receipt_id) {
                         const receipt = receipts.find(item => String(item.id) === String(source.receipt_id));
-                        if (receipt) printReceipt(receipt, printWindow); else { printWindow.close(); receiptStatus.textContent = "Saved receipt not found. Reload and try again."; }
+                        if (receipt) { receiptStatus.textContent = "Use the actions beside the issued receipt to print or send it."; receiptHistoryNode.scrollIntoView({ behavior: "smooth", block: "nearest" }); } else receiptStatus.textContent = "Saved receipt not found. Reload and try again.";
                         return;
                     }
                     const serviceProvider = document.getElementById("receiptServiceProvider").value.trim();
-                    if (!serviceProvider) { printWindow.close(); receiptStatus.textContent = "Enter the service provider's name first."; document.getElementById("receiptServiceProvider").focus(); return; }
+                    if (!serviceProvider) { receiptStatus.textContent = "Enter the service provider's name first."; document.getElementById("receiptServiceProvider").focus(); return; }
                     receiptStatus.textContent = "Saving receipt…";
                     try {
                         const receipt = await apiRequest("/api/receipts", { method: "POST", body: JSON.stringify({ sourceType: source.source_type, sourceId: Number(source.source_id), serviceProvider }) });
-                        receiptStatus.textContent = "Receipt saved. Use the print dialog to print or save it as a PDF.";
-                        printReceipt(receipt, printWindow);
+                        receiptStatus.textContent = "Receipt saved. Choose Print / PDF, WhatsApp, or Email from the issued receipt.";
                         await loadReceipts();
-                    } catch (error) { printWindow.close(); receiptStatus.textContent = error.message; }
+                    } catch (error) { receiptStatus.textContent = error.message; }
                 });
                 receiptSourcesNode.appendChild(card);
             });
@@ -185,8 +347,10 @@
             receipts.forEach(function(receipt) {
                 const card = document.createElement("article");
                 card.className = "document-history-card";
-                card.innerHTML = `<div><strong>${escapeHtml(receipt.receipt_number)} · ${escapeHtml(receipt.snapshot?.sale?.customerName || "Walk-in customer")}</strong><small>${escapeHtml(dateText(receipt.created_at))} · ${escapeHtml(receipt.snapshot?.sale?.reference || "")}</small><small>Service provider: ${escapeHtml(receipt.service_provider)}</small></div><strong>${money(receipt.snapshot?.sale?.total)}</strong><button type="button">Print / PDF</button>`;
-                card.querySelector("button").addEventListener("click", function() { const printWindow = openPrintWindow(); printReceipt(receipt, printWindow); });
+                card.innerHTML = `<div><strong>${escapeHtml(receipt.receipt_number)} · ${escapeHtml(receipt.snapshot?.sale?.customerName || "Walk-in customer")}</strong><small>${escapeHtml(dateText(receipt.created_at))} · ${escapeHtml(receipt.snapshot?.sale?.reference || "")}</small><small>Service provider: ${escapeHtml(receipt.service_provider)}</small></div><strong>${money(receipt.snapshot?.sale?.total)}</strong>`;
+                const snapshot = receipt.snapshot || {};
+                const doc = { kind: "Receipt", number: receipt.receipt_number, date: snapshot.sale?.createdAt || receipt.created_at, customer: { name: snapshot.sale?.customerName, phone: snapshot.sale?.customerPhone, email: snapshot.sale?.customerEmail }, provider: snapshot.serviceProvider || receipt.service_provider, items: snapshot.sale?.items, total: snapshot.sale?.total, reference: snapshot.sale?.reference, paymentMethod: snapshot.sale?.paymentMethod, paymentStatus: snapshot.sale?.paymentStatus, store: snapshot.store };
+                card.appendChild(makeDocumentActions(doc, function() { const printWindow = openPrintWindow(); printReceipt(receipt, printWindow); }, receiptStatus));
                 receiptHistoryNode.appendChild(card);
             });
         } catch (error) {

@@ -918,6 +918,10 @@ body.admin-dark .admin-install-help-card h2 { color: #f8fafc; }.inventory-stock-
 .document-status { min-height: 20px; color: #0f766e; font-weight: 650; }
 .document-history { margin: 24px 0; }
 .document-history-card { display: grid; grid-template-columns: minmax(0, 1fr) auto auto; align-items: center; gap: 16px; margin: 10px 0; padding: 14px 16px; border: 1px solid #dbe2ea; border-radius: 10px; background: #fff; }
+.document-actions { display: flex; flex-wrap: wrap; justify-content: flex-end; gap: 7px; }
+.document-pdf-options { display: flex; flex-wrap: wrap; gap: 7px; }
+.document-pdf-options[hidden] { display: none; }
+.document-history-card .document-actions button { min-height: 36px; padding: 7px 10px; font-size: 13px; }
 .document-history-card small { display: block; margin-top: 5px; color: #64748b; overflow-wrap: anywhere; }
 .receipt-provider-field { max-width: 460px; }
 .store-profile-form { margin-top: 32px; }
@@ -926,4 +930,4 @@ body.admin-dark .document-form label, body.admin-dark .store-profile-form label,
 body.admin-dark .document-form input, body.admin-dark .document-form select, body.admin-dark .document-form textarea, body.admin-dark .store-profile-form input, body.admin-dark .store-profile-form textarea, body.admin-dark .receipt-provider-field input, body.admin-dark .document-item-row .remove-quote-item { color: #f8fafc; border-color: #475569; background: #0f172a; }
 body.admin-dark .document-item-row { border-color: #475569; background: #0f172a; }
 body.admin-dark .document-history-card small, body.admin-dark .admin-documents-panel > p { color: #cbd5e1; }
-@media (max-width: 760px) { .document-fields { grid-template-columns: 1fr; } .document-item-row { grid-template-columns: 1fr 1fr; } .document-item-row label:first-child { grid-column: 1 / -1; } .document-item-row .quote-line-total { grid-column: 1; } .document-history-card { grid-template-columns: 1fr auto; } .document-history-card > strong { grid-column: 1; } .document-history-card button { grid-column: 2; grid-row: 1 / span 2; } }
+@media (max-width: 760px) { .document-fields { grid-template-columns: 1fr; } .document-item-row { grid-template-columns: 1fr 1fr; } .document-item-row label:first-child { grid-column: 1 / -1; } .document-item-row .quote-line-total { grid-column: 1; } .document-history-card { grid-template-columns: 1fr; gap: 10px; } .document-history-card > strong { grid-column: 1; } .document-actions { justify-content: flex-start; } .document-history-card .document-actions button { flex: 1 1 auto; } }
