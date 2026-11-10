@@ -72,4 +72,39 @@ ALTER TABLE orders ADD COLUMN order_number BIGINT;
 CREATE UNIQUE INDEX orders_order_number_unique ON orders (order_number) WHERE order_number IS NOT NULL;
 CREATE INDEX reviews_created_at_index ON reviews (created_at DESC);
 
+CREATE TABLE store_profile (
+  id SMALLINT PRIMARY KEY CHECK (id = 1),
+  store_name TEXT NOT NULL DEFAULT '',
+  store_address TEXT NOT NULL DEFAULT '',
+  store_phone TEXT NOT NULL DEFAULT '',
+  store_email TEXT NOT NULL DEFAULT '',
+  updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+);
+
+CREATE TABLE quotations (
+  id BIGSERIAL PRIMARY KEY,
+  customer_name TEXT NOT NULL,
+  customer_phone TEXT NOT NULL DEFAULT '',
+  customer_email TEXT NOT NULL DEFAULT '',
+  service_provider TEXT NOT NULL,
+  notes TEXT NOT NULL DEFAULT '',
+  items JSONB NOT NULL,
+  store_profile JSONB NOT NULL DEFAULT '{}'::jsonb,
+  total NUMERIC(12, 2) NOT NULL CHECK (total >= 0),
+  status TEXT NOT NULL DEFAULT 'Issued',
+  created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+);
+CREATE INDEX quotations_created_at_index ON quotations (created_at DESC);
+
+CREATE TABLE receipts (
+  id BIGSERIAL PRIMARY KEY,
+  source_type TEXT NOT NULL CHECK (source_type IN ('offline', 'online')),
+  source_id BIGINT NOT NULL,
+  service_provider TEXT NOT NULL,
+  snapshot JSONB NOT NULL,
+  created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+  UNIQUE (source_type, source_id)
+);
+CREATE INDEX receipts_created_at_index ON receipts (created_at DESC);
+
 

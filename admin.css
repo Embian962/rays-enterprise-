@@ -901,3 +901,29 @@ body.admin-dark .admin-install-help-card h2 { color: #f8fafc; }.inventory-stock-
 .inventory-stock-save { min-height: 36px; padding: 7px 12px; border: 0; border-radius: 8px; color: #fff; background: #0f766e; font-weight: 700; cursor: pointer; }
 .inventory-stock-save:hover, .inventory-stock-save:focus-visible { background: #115e59; }
 .inventory-stock-save:disabled { cursor: wait; opacity: .65; }
+.admin-documents-panel > p { color: #64748b; }
+.document-form, .store-profile-form { display: grid; gap: 16px; max-width: 980px; padding: 20px; border: 1px solid #dbe2ea; border-radius: 14px; background: #fff; }
+.document-fields { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 14px; }
+.document-form label, .store-profile-form label, .receipt-provider-field { display: grid; gap: 6px; color: #334155; font-weight: 650; }
+.document-form input, .document-form select, .document-form textarea, .store-profile-form input, .store-profile-form textarea, .receipt-provider-field input { width: 100%; min-height: 42px; padding: 10px 12px; border: 1px solid #cbd5e1; border-radius: 8px; color: #0f172a; background: #fff; font: inherit; }
+.document-form textarea, .store-profile-form textarea { min-height: 75px; resize: vertical; }
+.document-items-heading { display: flex; align-items: center; justify-content: space-between; gap: 12px; }
+.document-items-heading h3, .document-history h3 { margin: 8px 0; }
+.document-items-heading button, .document-form > button[type="submit"], .store-profile-form > button, .document-history-card button { min-height: 40px; padding: 9px 14px; border: 0; border-radius: 8px; color: #fff; background: #0f766e; font: inherit; font-weight: 700; cursor: pointer; }
+.document-item-list { display: grid; gap: 10px; }
+.document-item-row { display: grid; grid-template-columns: minmax(190px, 1.6fr) minmax(90px, .55fr) minmax(120px, .8fr) minmax(105px, .7fr) auto; align-items: end; gap: 10px; padding: 12px; border: 1px solid #e2e8f0; border-radius: 10px; background: #f8fafc; }
+.document-item-row > strong { padding: 12px 0; white-space: nowrap; }
+.document-item-row .remove-quote-item { min-height: 40px; padding: 8px 11px; border: 1px solid #cbd5e1; border-radius: 8px; color: #334155; background: #fff; cursor: pointer; }
+.document-total { text-align: right; font-size: 20px; font-weight: 750; }
+.document-status { min-height: 20px; color: #0f766e; font-weight: 650; }
+.document-history { margin: 24px 0; }
+.document-history-card { display: grid; grid-template-columns: minmax(0, 1fr) auto auto; align-items: center; gap: 16px; margin: 10px 0; padding: 14px 16px; border: 1px solid #dbe2ea; border-radius: 10px; background: #fff; }
+.document-history-card small { display: block; margin-top: 5px; color: #64748b; overflow-wrap: anywhere; }
+.receipt-provider-field { max-width: 460px; }
+.store-profile-form { margin-top: 32px; }
+body.admin-dark .document-form, body.admin-dark .store-profile-form, body.admin-dark .document-history-card { color: #e2e8f0; border-color: #475569; background: #1e293b; }
+body.admin-dark .document-form label, body.admin-dark .store-profile-form label, body.admin-dark .receipt-provider-field { color: #e2e8f0; }
+body.admin-dark .document-form input, body.admin-dark .document-form select, body.admin-dark .document-form textarea, body.admin-dark .store-profile-form input, body.admin-dark .store-profile-form textarea, body.admin-dark .receipt-provider-field input, body.admin-dark .document-item-row .remove-quote-item { color: #f8fafc; border-color: #475569; background: #0f172a; }
+body.admin-dark .document-item-row { border-color: #475569; background: #0f172a; }
+body.admin-dark .document-history-card small, body.admin-dark .admin-documents-panel > p { color: #cbd5e1; }
+@media (max-width: 760px) { .document-fields { grid-template-columns: 1fr; } .document-item-row { grid-template-columns: 1fr 1fr; } .document-item-row label:first-child { grid-column: 1 / -1; } .document-item-row .quote-line-total { grid-column: 1; } .document-history-card { grid-template-columns: 1fr auto; } .document-history-card > strong { grid-column: 1; } .document-history-card button { grid-column: 2; grid-row: 1 / span 2; } }
