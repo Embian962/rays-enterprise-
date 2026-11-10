@@ -83,7 +83,7 @@ const ensureSharedDataSchema = async () => {
       rating SMALLINT NOT NULL CHECK (rating BETWEEN 1 AND 5),
       comment TEXT NOT NULL,
       client_request_id TEXT UNIQUE,
-      created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+      created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
     )
   `);
   await pool.query("ALTER TABLE reviews ADD COLUMN IF NOT EXISTS client_request_id TEXT");
@@ -93,14 +93,15 @@ const ensureSharedDataSchema = async () => {
       id BIGSERIAL PRIMARY KEY,
       customer_name TEXT NOT NULL,
       message TEXT NOT NULL,
-      created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+      created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
     )
   `);
   await pool.query("CREATE INDEX IF NOT EXISTS orders_created_at_index ON orders (created_at DESC)");
   await pool.query("CREATE SEQUENCE IF NOT EXISTS customer_order_number_seq START WITH 1");
   await pool.query("ALTER TABLE orders ADD COLUMN IF NOT EXISTS order_number BIGINT");
   await pool.query("CREATE UNIQUE INDEX IF NOT EXISTS orders_order_number_unique ON orders (order_number) WHERE order_number IS NOT NULL");
-  await pool.query("CREATE INDEX IF NOT EXISTS reviews_created_at_index ON reviews (created_at DESC)");  await pool.query(`
+  await pool.query("CREATE INDEX IF NOT EXISTS reviews_created_at_index ON reviews (created_at DESC)");
+  await pool.query(`
     CREATE TABLE IF NOT EXISTS offline_sales (
       id BIGSERIAL PRIMARY KEY,
       customer_name TEXT,
@@ -108,7 +109,7 @@ const ensureSharedDataSchema = async () => {
       notes TEXT,
       total NUMERIC(12, 2) NOT NULL CHECK (total >= 0),
       payment_method TEXT NOT NULL,
-      created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+      created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
     )
   `);
   await pool.query(`
