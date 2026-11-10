@@ -540,14 +540,6 @@ function editProduct(index) {
     const editSection = document.getElementById("edit-section");
     editSection.style.display = "block";
     editSection.hidden = false;
-    editSection.style.position = "fixed";
-    editSection.style.top = "24px";
-    editSection.style.left = "50%";
-    editSection.style.transform = "translateX(-50%)";
-    editSection.style.width = "min(92vw, 680px)";
-    editSection.style.height = "calc(100vh - 48px)";
-    editSection.style.maxHeight = "calc(100vh - 48px)";
-    editSection.style.overflowY = "scroll";
     editSection.style.zIndex = "2000";
     document.body.classList.remove("image-editor-open");
     document.body.classList.add("edit-editor-open");

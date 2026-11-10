@@ -446,6 +446,7 @@
             class="edit-section"
             id="edit-section"
             style="display: none;"
+            hidden
         >
 
             <h2>
@@ -586,7 +587,7 @@
 
                 <button
                     type="button"
-                    onclick="cancelEdit()"
+                    id="cancelEditButton"
                 >
                     Cancel
                 </button>
@@ -677,8 +678,9 @@
     ========================== -->
 
     <script src="api-config.js"></script>
-    <script src="admin.js?v=20261110-login-handler"></script>
-    <script src="admin-login.js?v=20261110-login-handler"></script>
+    <script src="admin.js?v=20261110-editor-visibility"></script>
+    <script src="admin-editor.js?v=20261110-editor-visibility"></script>
+    <script src="admin-login.js?v=20261110-editor-visibility"></script>
 
 
 </body>
@@ -686,7 +688,7 @@
 </html>
 
 <script src="admin-access.js"></script>
-<script src="admin-pwa.js?v=20261110-login-handler"></script>
+<script src="admin-pwa.js?v=20261110-editor-visibility"></script>
 
 
 
