@@ -17,7 +17,7 @@
 
     <link
         rel="stylesheet"
-        href="admin.css?v=20260918-stock-edit"
+        href="admin.css?v=20261110-admin-documents"
     >
 
 </head>
@@ -62,7 +62,7 @@
 
 
 <button type="button" id="sidebarToggle" class="sidebar-toggle" aria-label="Hide navigation" aria-expanded="true">⋮</button>
-<aside class="admin-sidebar" aria-label="Admin navigation"><div class="sidebar-brand">Rays Enterprise</div><nav><a href="#admin-dashboard">Dashboard</a><a href="#products-panel">Products</a><a href="#offline-sale-section">Make New Sale</a><a href="#offline-history-section">Offline Sales History</a><a href="#orders-panel">Online Orders</a><a href="#sales-reports">Sales Reports</a><a href="#inventory-panel">Inventory</a><a href="#feedback-inbox">Customers</a><a href="#feedback-inbox">Feedback</a><a href="#admin-settings">Settings</a></nav></aside>
+<aside class="admin-sidebar" aria-label="Admin navigation"><div class="sidebar-brand">Rays Enterprise</div><nav><a href="#admin-dashboard">Dashboard</a><a href="#products-panel">Products</a><a href="#offline-sale-section">Make New Sale</a><a href="#offline-history-section">Offline Sales History</a><a href="#orders-panel">Online Orders</a><a href="#quotations-panel">Quotations</a><a href="#receipts-panel">Receipts</a><a href="#sales-reports">Sales Reports</a><a href="#inventory-panel">Inventory</a><a href="#feedback-inbox">Customers</a><a href="#feedback-inbox">Feedback</a><a href="#admin-settings">Settings</a></nav></aside>
 
 <main>
         <section class="admin-welcome" id="admin-welcome"><img src="rays-enterprise-logo-new.jpg" alt="Rays Enterprise logo"><h2>Welcome back, Manager</h2><p>Select a section from the sidebar to get started.</p></section>
@@ -250,6 +250,7 @@
                 <label for="offlineSalePrice">Selling price per item (KSh)</label><input type="number" id="offlineSalePrice" min="0" step="0.01" required>
                 <label for="offlineSalePayment">Payment method</label><select id="offlineSalePayment"><option>Cash</option><option>M-Pesa</option><option>Card</option><option>Other</option></select>
                 <label for="offlineSaleCustomer">Customer name (optional)</label><input type="text" id="offlineSaleCustomer">
+                <label for="offlineSaleCustomerPhone">Customer phone (optional)</label><input type="tel" id="offlineSaleCustomerPhone" autocomplete="tel">
                 <label for="offlineSaleNotes">Notes (optional)</label><textarea id="offlineSaleNotes" rows="2"></textarea>
                 <p><strong>Total: KSh <span id="offlineSaleTotal">0</span></strong></p><p id="offlineSaleStatus" class="offline-sale-status" aria-live="polite"></p>
                 <div class="product-form-actions"><button type="submit">Save Offline Sale</button><button type="button" id="cancelOfflineSaleButton">Cancel</button></div>
@@ -662,12 +663,50 @@
             </form>
         </section>
 
+        <section class="admin-section admin-documents-panel" id="quotations-panel" hidden>
+            <h2>Quotations</h2>
+            <p>Create a priced offer for a customer. Quotations do not reserve stock or create an order.</p>
+            <form id="quotationForm" class="document-form">
+                <div class="document-fields">
+                    <label>Customer name<input name="customerName" autocomplete="name" required maxlength="200"></label>
+                    <label>Customer phone<input name="customerPhone" type="tel" autocomplete="tel" maxlength="80"></label>
+                    <label>Customer email<input name="customerEmail" type="email" autocomplete="email" maxlength="200"></label>
+                    <label>Service provider<input name="serviceProvider" required maxlength="200"></label>
+                </div>
+                <div class="document-items-heading"><h3>Products and prices</h3><button type="button" id="addQuotationItem">Add product</button></div>
+                <div id="quotationItems" class="document-item-list"></div>
+                <label>Notes or terms<textarea name="notes" rows="3" maxlength="2000"></textarea></label>
+                <p id="quotationTotal" class="document-total">Total: KSh 0</p>
+                <p id="quotationStatus" class="document-status" role="status" aria-live="polite"></p>
+                <button type="submit" id="saveQuotationButton">Save and print quotation</button>
+            </form>
+            <div class="document-history"><h3>Saved quotations</h3><div id="quotationHistory"><p>Quotations will appear here.</p></div></div>
+        </section>
+
+        <section class="admin-section admin-documents-panel" id="receipts-panel" hidden>
+            <h2>Receipts</h2>
+            <p>Create receipts from recorded offline sales or completed online orders.</p>
+            <label class="receipt-provider-field">Service provider<input id="receiptServiceProvider" maxlength="200" required></label>
+            <p id="receiptStatus" class="document-status" role="status" aria-live="polite"></p>
+            <div class="document-history"><h3>Sales available for receipt</h3><div id="receiptSources"><p>Sales will appear here.</p></div></div>
+            <div class="document-history"><h3>Issued receipts</h3><div id="receiptHistory"><p>Receipts will appear here.</p></div></div>
+        </section>
+
         <section class="admin-section admin-settings-panel" id="admin-settings" hidden>
             <h2>Settings</h2>
             <h3>Appearance</h3>
             <label class="theme-option"><input type="radio" name="adminTheme" value="light"> Light mode</label>
             <label class="theme-option"><input type="radio" name="adminTheme" value="dark"> Dark mode</label>
             <button type="button" id="saveThemeButton">Save preferences</button>
+            <form id="storeProfileForm" class="store-profile-form">
+                <h3>Store details for quotations and receipts</h3>
+                <label>Store name<input name="name" required maxlength="160"></label>
+                <label>Store address<textarea name="address" rows="2" maxlength="500"></textarea></label>
+                <label>Store phone<input name="phone" type="tel" maxlength="80"></label>
+                <label>Store email<input name="email" type="email" maxlength="200"></label>
+                <p id="storeProfileStatus" class="document-status" role="status" aria-live="polite"></p>
+                <button type="submit">Save store details</button>
+            </form>
         </section>
 </main>
 
@@ -678,9 +717,10 @@
     ========================== -->
 
     <script src="api-config.js"></script>
-    <script src="admin.js?v=20261110-admin-image-delivery"></script>
-    <script src="admin-editor.js?v=20261110-admin-image-delivery"></script>
-    <script src="admin-login.js?v=20261110-admin-image-delivery"></script>
+    <script src="admin.js?v=20261110-admin-documents"></script>
+    <script src="admin-editor.js?v=20261110-admin-documents"></script>
+    <script src="admin-login.js?v=20261110-admin-documents"></script>
+    <script src="admin-documents.js?v=20261110-admin-documents"></script>
 
 
 </body>
@@ -688,7 +728,7 @@
 </html>
 
 <script src="admin-access.js"></script>
-<script src="admin-pwa.js?v=20261110-admin-image-delivery"></script>
+<script src="admin-pwa.js?v=20261110-admin-documents"></script>
 
 
 

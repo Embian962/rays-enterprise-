@@ -126,6 +126,45 @@ const ensureSharedDataSchema = async () => {
   `);
   await pool.query("CREATE INDEX IF NOT EXISTS offline_sales_created_at_index ON offline_sales (created_at DESC)");
   await pool.query("CREATE INDEX IF NOT EXISTS offline_sale_items_sale_id_index ON offline_sale_items (sale_id)");
+  await pool.query(`
+    CREATE TABLE IF NOT EXISTS store_profile (
+      id SMALLINT PRIMARY KEY CHECK (id = 1),
+      store_name TEXT NOT NULL DEFAULT '',
+      store_address TEXT NOT NULL DEFAULT '',
+      store_phone TEXT NOT NULL DEFAULT '',
+      store_email TEXT NOT NULL DEFAULT '',
+      updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+    )
+  `);
+  await pool.query(`
+    CREATE TABLE IF NOT EXISTS quotations (
+      id BIGSERIAL PRIMARY KEY,
+      customer_name TEXT NOT NULL,
+      customer_phone TEXT NOT NULL DEFAULT '',
+      customer_email TEXT NOT NULL DEFAULT '',
+      service_provider TEXT NOT NULL,
+      notes TEXT NOT NULL DEFAULT '',
+      items JSONB NOT NULL,
+      store_profile JSONB NOT NULL DEFAULT '{}'::jsonb,
+      total NUMERIC(12, 2) NOT NULL CHECK (total >= 0),
+      status TEXT NOT NULL DEFAULT 'Issued',
+      created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+    )
+  `);
+  await pool.query("ALTER TABLE quotations ADD COLUMN IF NOT EXISTS store_profile JSONB NOT NULL DEFAULT '{}'::jsonb");
+  await pool.query("CREATE INDEX IF NOT EXISTS quotations_created_at_index ON quotations (created_at DESC)");
+  await pool.query(`
+    CREATE TABLE IF NOT EXISTS receipts (
+      id BIGSERIAL PRIMARY KEY,
+      source_type TEXT NOT NULL CHECK (source_type IN ('offline', 'online')),
+      source_id BIGINT NOT NULL,
+      service_provider TEXT NOT NULL,
+      snapshot JSONB NOT NULL,
+      created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+      UNIQUE (source_type, source_id)
+    )
+  `);
+  await pool.query("CREATE INDEX IF NOT EXISTS receipts_created_at_index ON receipts (created_at DESC)");
 };
 const allowedOrigins = new Set([
   ...(process.env.FRONTEND_ORIGIN || "").split(",").map(origin => origin.trim()).filter(Boolean),
@@ -599,6 +638,63 @@ app.post("/api/offline-sales", isAdmin, asyncRoute(async (req, res) => {
   } catch (error) { await client.query("ROLLBACK"); res.status(409).json({ error: error.message }); }
   finally { client.release(); }
 }));
+app.get("/api/store-profile", isAdmin, asyncRoute(async (_req, res) => {
+  const { rows } = await pool.query("SELECT store_name AS name, store_address AS address, store_phone AS phone, store_email AS email FROM store_profile WHERE id=1");
+  res.json(rows[0] || { name: "Ray's Enterprise", address: "", phone: "", email: "" });
+}));
+
+app.put("/api/store-profile", isAdmin, asyncRoute(async (req, res) => {
+  const profile = req.body || {};
+  const name = String(profile.name || "").trim().slice(0, 160);
+  if (!name) return res.status(400).json({ error: "Enter the store name." });
+  const { rows } = await pool.query(`
+    INSERT INTO store_profile (id, store_name, store_address, store_phone, store_email, updated_at)
+    VALUES (1, $1, $2, $3, $4, NOW())
+    ON CONFLICT (id) DO UPDATE SET store_name=EXCLUDED.store_name, store_address=EXCLUDED.store_address,
+      store_phone=EXCLUDED.store_phone, store_email=EXCLUDED.store_email, updated_at=NOW()
+    RETURNING store_name AS name, store_address AS address, store_phone AS phone, store_email AS email
+  `, [name, String(profile.address || "").trim().slice(0, 500), String(profile.phone || "").trim().slice(0, 80), String(profile.email || "").trim().slice(0, 200)]);
+  res.json(rows[0]);
+}));
+
+app.get("/api/quotations", isAdmin, asyncRoute(async (_req, res) => {
+  const { rows } = await pool.query("SELECT * FROM quotations ORDER BY created_at DESC LIMIT 250");
+  res.json(rows.map(row => ({ ...row, quotation_number: `Q-${String(row.id).padStart(6, "0")}`, total: Number(row.total) })));
+}));
+
+app.post("/api/quotations", isAdmin, asyncRoute(async (req, res) => {
+  const body = req.body || {};
+  const customerName = String(body.customerName || "").trim().slice(0, 200);
+  const serviceProvider = String(body.serviceProvider || "").trim().slice(0, 200);
+  if (!customerName) return res.status(400).json({ error: "Enter the customer's name." });
+  if (!serviceProvider) return res.status(400).json({ error: "Enter the service provider's name." });
+  if (!Array.isArray(body.items) || !body.items.length || body.items.length > 100) return res.status(400).json({ error: "Add between 1 and 100 quotation items." });
+  const productIds = [...new Set(body.items.map(item => Number(item.productId)))];
+  if (productIds.some(id => !Number.isSafeInteger(id) || id < 1)) return res.status(400).json({ error: "Choose a valid product for every item." });
+  const productRows = await pool.query("SELECT id, name, price FROM products WHERE id = ANY($1::bigint[])", [productIds]);
+  const productsById = new Map(productRows.rows.map(product => [String(product.id), product]));
+  const items = [];
+  for (const item of body.items) {
+    const id = Number(item.productId);
+    const quantity = Math.floor(Number(item.quantity));
+    const product = productsById.get(String(id));
+    if (!product) return res.status(400).json({ error: "One of the selected products is no longer available." });
+    if (!Number.isSafeInteger(quantity) || quantity < 1 || quantity > 100000) return res.status(400).json({ error: `Enter a valid quantity for ${product.name}.` });
+    const unitPrice = Number(item.unitPrice ?? product.price);
+    if (!Number.isFinite(unitPrice) || unitPrice < 0 || unitPrice > 100000000) return res.status(400).json({ error: `Enter a valid price for ${product.name}.` });
+    items.push({ productId: id, productName: product.name, quantity, unitPrice: Math.round(unitPrice * 100) / 100, lineTotal: Math.round(quantity * unitPrice * 100) / 100 });
+  }
+  const total = Math.round(items.reduce((sum, item) => sum + item.lineTotal, 0) * 100) / 100;
+  const storeResult = await pool.query("SELECT store_name AS name, store_address AS address, store_phone AS phone, store_email AS email FROM store_profile WHERE id=1");
+  const storeProfile = storeResult.rows[0] || { name: "Ray's Enterprise", address: "", phone: "", email: "" };
+  const { rows } = await pool.query(`
+    INSERT INTO quotations (customer_name, customer_phone, customer_email, service_provider, notes, items, store_profile, total)
+    VALUES ($1,$2,$3,$4,$5,$6,$7,$8) RETURNING *
+  `, [customerName, String(body.customerPhone || "").trim().slice(0, 80), String(body.customerEmail || "").trim().slice(0, 200), serviceProvider, String(body.notes || "").trim().slice(0, 2000), JSON.stringify(items), JSON.stringify(storeProfile), total]);
+  const quote = rows[0];
+  res.status(201).json({ ...quote, quotation_number: `Q-${String(quote.id).padStart(6, "0")}`, total: Number(quote.total) });
+}));
+
 app.post("/api/orders/track", asyncRoute(async (req, res) => {
   const { orderId, customerPhone } = req.body || {};
   if (!orderId || !customerPhone) {
@@ -689,6 +785,58 @@ app.delete("/api/orders/:id", isAdmin, asyncRoute(async (req, res) => {
   if (!result.rowCount) return res.status(404).json({ error: "Order not found." });
   res.status(204).end();
 }));
+
+app.get("/api/receipts", isAdmin, asyncRoute(async (_req, res) => {
+  const { rows } = await pool.query("SELECT id, source_type, source_id, service_provider, snapshot, created_at FROM receipts ORDER BY created_at DESC LIMIT 250");
+  res.json(rows.map(row => ({ ...row, receipt_number: `R-${String(row.id).padStart(6, "0")}` })));
+}));
+
+app.get("/api/receipts/sources", isAdmin, asyncRoute(async (_req, res) => {
+  const [offline, online] = await Promise.all([
+    pool.query(`SELECT s.id, s.customer_name, s.customer_phone, s.total, s.payment_method, s.created_at,
+      COALESCE(json_agg(json_build_object('productName', i.product_name, 'quantity', i.quantity, 'unitPrice', i.unit_price, 'lineTotal', i.line_total) ORDER BY i.id) FILTER (WHERE i.id IS NOT NULL), '[]') AS items
+      FROM offline_sales s LEFT JOIN offline_sale_items i ON i.sale_id=s.id GROUP BY s.id ORDER BY s.created_at DESC LIMIT 250`),
+    pool.query("SELECT id, order_number, customer_name, customer_phone, total, payment_method, payment_status, products, created_at FROM orders WHERE status='Completed' ORDER BY completed_at DESC NULLS LAST, created_at DESC LIMIT 250")
+  ]);
+  const sources = [
+    ...offline.rows.map(row => ({ source_type: "offline", source_id: row.id, reference: `Sale #${row.id}`, customer_name: row.customer_name || "", customer_phone: row.customer_phone || "", total: Number(row.total), payment_method: row.payment_method, payment_status: "Recorded sale", items: row.items, created_at: row.created_at })),
+    ...online.rows.map(row => ({ source_type: "online", source_id: row.id, reference: row.order_number ? `Order No.${String(row.order_number).padStart(3, "0")}` : `Order #${row.id}`, customer_name: row.customer_name || "", customer_phone: row.customer_phone || "", total: Number(row.total), payment_method: row.payment_method, payment_status: row.payment_status, items: (Array.isArray(row.products) ? row.products : []).map(item => ({ productName: item.name || item.productName || "Product", quantity: Number(item.quantity) || 0, unitPrice: Number(item.price ?? item.unitPrice) || 0, lineTotal: (Number(item.price ?? item.unitPrice) || 0) * (Number(item.quantity) || 0) })), created_at: row.created_at }))
+  ].sort((a, b) => new Date(b.created_at) - new Date(a.created_at));
+  const issued = await pool.query("SELECT source_type, source_id, id FROM receipts");
+  const receiptIds = new Map(issued.rows.map(row => [`${row.source_type}:${row.source_id}`, row.id]));
+  res.json(sources.map(source => ({ ...source, receipt_id: receiptIds.get(`${source.source_type}:${source.source_id}`) || null })));
+}));
+
+app.post("/api/receipts", isAdmin, asyncRoute(async (req, res) => {
+  const sourceType = String(req.body?.sourceType || "");
+  const sourceId = Number(req.body?.sourceId);
+  const serviceProvider = String(req.body?.serviceProvider || "").trim().slice(0, 200);
+  if (!["offline", "online"].includes(sourceType) || !Number.isSafeInteger(sourceId) || sourceId < 1) return res.status(400).json({ error: "Choose a valid sale or completed order." });
+  if (!serviceProvider) return res.status(400).json({ error: "Enter the service provider's name." });
+  const existing = await pool.query("SELECT id, source_type, source_id, service_provider, snapshot, created_at FROM receipts WHERE source_type=$1 AND source_id=$2", [sourceType, sourceId]);
+  if (existing.rows[0]) return res.json({ ...existing.rows[0], receipt_number: `R-${String(existing.rows[0].id).padStart(6, "0")}` });
+
+  const profileResult = await pool.query("SELECT store_name AS name, store_address AS address, store_phone AS phone, store_email AS email FROM store_profile WHERE id=1");
+  const store = profileResult.rows[0] || { name: "Ray's Enterprise", address: "", phone: "", email: "" };
+  let sale;
+  if (sourceType === "offline") {
+    const { rows } = await pool.query(`SELECT s.*, COALESCE(json_agg(json_build_object('productName', i.product_name, 'quantity', i.quantity, 'unitPrice', i.unit_price, 'lineTotal', i.line_total) ORDER BY i.id) FILTER (WHERE i.id IS NOT NULL), '[]') AS items FROM offline_sales s LEFT JOIN offline_sale_items i ON i.sale_id=s.id WHERE s.id=$1 GROUP BY s.id`, [sourceId]);
+    if (!rows[0]) return res.status(404).json({ error: "That sale could not be found." });
+    sale = { reference: `Sale #${rows[0].id}`, customerName: rows[0].customer_name || "", customerPhone: rows[0].customer_phone || "", paymentMethod: rows[0].payment_method, paymentStatus: "Recorded sale", total: Number(rows[0].total), items: rows[0].items, createdAt: rows[0].created_at };
+  } else {
+    const { rows } = await pool.query("SELECT * FROM orders WHERE id=$1 AND status='Completed'", [sourceId]);
+    if (!rows[0]) return res.status(404).json({ error: "Only completed online orders can receive a receipt." });
+    const order = rows[0];
+    sale = { reference: order.order_number ? `Order No.${String(order.order_number).padStart(3, "0")}` : `Order #${order.id}`, customerName: order.customer_name || "", customerPhone: order.customer_phone || "", customerEmail: order.customer_email || "", paymentMethod: order.payment_method, paymentStatus: order.payment_status, total: Number(order.total), items: (Array.isArray(order.products) ? order.products : []).map(item => { const quantity = Number(item.quantity) || 0; const unitPrice = Number(item.price ?? item.unitPrice) || 0; return { productName: item.name || item.productName || "Product", quantity, unitPrice, lineTotal: quantity * unitPrice }; }), createdAt: order.created_at };
+  }
+  const snapshot = { store, sale, serviceProvider, issuedAt: new Date().toISOString() };
+  const inserted = await pool.query(`INSERT INTO receipts (source_type, source_id, service_provider, snapshot)
+    VALUES ($1,$2,$3,$4) ON CONFLICT (source_type, source_id) DO NOTHING
+    RETURNING id, source_type, source_id, service_provider, snapshot, created_at`, [sourceType, sourceId, serviceProvider, JSON.stringify(snapshot)]);
+  const result = inserted.rows[0] || (await pool.query("SELECT id, source_type, source_id, service_provider, snapshot, created_at FROM receipts WHERE source_type=$1 AND source_id=$2", [sourceType, sourceId])).rows[0];
+  res.status(inserted.rows[0] ? 201 : 200).json({ ...result, receipt_number: `R-${String(result.id).padStart(6, "0")}` });
+}));
+
 app.get("/api/reviews", asyncRoute(async (_req, res) => {
   const { rows } = await pool.query("SELECT * FROM reviews ORDER BY created_at DESC");
   res.json(rows.map(serializeReview));
