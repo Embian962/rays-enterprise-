@@ -238,7 +238,7 @@ function validateImageFiles(files) {
     if (files.reduce((sum, file) => sum + file.size, 0) > MAX_PRODUCT_IMAGE_TOTAL_BYTES) { alert("The selected original images must total less than 40 MB."); return false; }
     return true;
 }
-function readImageFiles(files) {
+async function readImageFiles(files) {
     function readDataUrl(file) {
         return new Promise((resolve, reject) => {
             const reader = new FileReader();
