@@ -912,6 +912,12 @@ body.admin-dark .admin-install-help-card h2 { color: #f8fafc; }.inventory-stock-
 .document-items-heading button, .document-form > button[type="submit"], .store-profile-form > button, .document-history-card button { min-height: 40px; padding: 9px 14px; border: 0; border-radius: 8px; color: #fff; background: #0f766e; font: inherit; font-weight: 700; cursor: pointer; }
 .document-item-list { display: grid; gap: 10px; }
 .document-item-row { display: grid; grid-template-columns: minmax(190px, 1.6fr) minmax(90px, .55fr) minmax(120px, .8fr) minmax(105px, .7fr) auto; align-items: end; gap: 10px; padding: 12px; border: 1px solid #e2e8f0; border-radius: 10px; background: #f8fafc; }
+.quote-product-picker { display: grid; gap: 8px; min-width: 0; }
+.quote-product-picker > label:first-child { display: grid; grid-template-columns: minmax(0, 1fr) auto; align-items: end; gap: 6px; }
+.quote-product-picker > label:first-child > span { grid-column: 1 / -1; }
+.quote-product-search-button { min-height: 42px; padding: 8px 12px; border: 0; border-radius: 8px; color: #fff; background: #0f766e; font: inherit; font-weight: 700; cursor: pointer; }
+.quote-product-search-button:hover, .quote-product-search-button:focus-visible { background: #115e59; }
+.quote-product-search-status { min-height: 16px; margin: -4px 0 0; color: #64748b; font-size: 12px; font-weight: 500; }
 .document-item-row > strong { padding: 12px 0; white-space: nowrap; }
 .document-item-row .remove-quote-item { min-height: 40px; padding: 8px 11px; border: 1px solid #cbd5e1; border-radius: 8px; color: #334155; background: #fff; cursor: pointer; }
 .document-total { text-align: right; font-size: 20px; font-weight: 750; }
@@ -929,5 +935,5 @@ body.admin-dark .document-form, body.admin-dark .store-profile-form, body.admin-
 body.admin-dark .document-form label, body.admin-dark .store-profile-form label, body.admin-dark .receipt-provider-field { color: #e2e8f0; }
 body.admin-dark .document-form input, body.admin-dark .document-form select, body.admin-dark .document-form textarea, body.admin-dark .store-profile-form input, body.admin-dark .store-profile-form textarea, body.admin-dark .receipt-provider-field input, body.admin-dark .document-item-row .remove-quote-item { color: #f8fafc; border-color: #475569; background: #0f172a; }
 body.admin-dark .document-item-row { border-color: #475569; background: #0f172a; }
-body.admin-dark .document-history-card small, body.admin-dark .admin-documents-panel > p { color: #cbd5e1; }
-@media (max-width: 760px) { .document-fields { grid-template-columns: 1fr; } .document-item-row { grid-template-columns: 1fr 1fr; } .document-item-row label:first-child { grid-column: 1 / -1; } .document-item-row .quote-line-total { grid-column: 1; } .document-history-card { grid-template-columns: 1fr; gap: 10px; } .document-history-card > strong { grid-column: 1; } .document-actions { justify-content: flex-start; } .document-history-card .document-actions button { flex: 1 1 auto; } }
+body.admin-dark .document-history-card small, body.admin-dark .admin-documents-panel > p, body.admin-dark .quote-product-search-status { color: #cbd5e1; }
+@media (max-width: 760px) { .document-fields { grid-template-columns: 1fr; } .document-item-row { grid-template-columns: 1fr 1fr; } .quote-product-picker { grid-column: 1 / -1; } .document-item-row .quote-line-total { grid-column: 1; } .document-history-card { grid-template-columns: 1fr; gap: 10px; } .document-history-card > strong { grid-column: 1; } .document-actions { justify-content: flex-start; } .document-history-card .document-actions button { flex: 1 1 auto; } }
