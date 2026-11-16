@@ -1038,6 +1038,7 @@ function showSaleDetails(item) {
     document.body.appendChild(modal); modal.querySelector(".panel-close-button").addEventListener("click", function() { modal.remove(); }); modal.querySelector(".sale-details-close").addEventListener("click", function() { modal.remove(); });
 }
 let offlineSalesCache = [];
+let monthlySalesReportCache = { order_count: 0, order_counts: { Pending: 0, Processing: 0, Completed: 0 }, completed_online_orders: 0, offline_sale_count: 0, online_sales: 0, offline_sales: 0, total_sales: 0, transactions: [] };
 let dashboardDetailsRequest = null;
 async function refreshDashboardDetails() {
     const lowStock = document.getElementById("low-stock-list");
@@ -1047,10 +1048,15 @@ async function refreshDashboardDetails() {
         lowStock.innerHTML = alerts.length ? alerts.map(function(product) { return `<div class="dashboard-list-row"><span>${product.name}</span><strong>${Number(product.stock) || 0} left</strong></div>`; }).join("") : "<p>All products have healthy stock.</p>";
     }
     if (!adminToken || dashboardDetailsRequest) return dashboardDetailsRequest;
-    dashboardDetailsRequest = adminRequest("/api/offline-sales").then(function(response) { return response ? response.json() : []; }).then(function(sales) {
+    dashboardDetailsRequest = Promise.all([adminRequest("/api/offline-sales"), adminRequest("/api/admin/sales-report")]).then(async function(responses) {
+        const sales = responses[0] ? await responses[0].json() : [];
+        monthlySalesReportCache = responses[1] ? await responses[1].json() : monthlySalesReportCache;
         offlineSalesCache = Array.isArray(sales) ? sales : [];
-        const activity = sharedOrders.map(function(order) { return { id: order.id, date: order.createdAt || order.created_at, label: "Online order", total: Number(order.total) || 0 }; }).concat(offlineSalesCache.map(function(sale) { return { id: sale.id, date: sale.created_at, label: "Offline sale", total: Number(sale.total) || 0 }; })).sort(function(a,b) { return new Date(b.date) - new Date(a.date); }).slice(0, 6);
+        const periodStart = new Date(monthlySalesReportCache.period_start || 0).getTime();
+        const periodEnd = new Date(monthlySalesReportCache.period_end || Date.now()).getTime();
+        const activity = sharedOrders.map(function(order) { return { id: order.id, date: (order.status === "Completed" && order.completedAt) || order.createdAt || order.created_at, label: "Online order", total: Number(order.total) || 0 }; }).concat(offlineSalesCache.map(function(sale) { return { id: sale.id, date: sale.created_at, label: "Offline sale", total: Number(sale.total) || 0 }; })).filter(function(item) { const time = new Date(item.date).getTime(); return time >= periodStart && time <= periodEnd; }).sort(function(a,b) { return new Date(b.date) - new Date(a.date); }).slice(0, 6);
         if (recent) { recent.innerHTML = activity.length ? activity.map(function(item, itemIndex) { return `<button type="button" class="dashboard-list-row dashboard-sale-row" data-sale-type="${item.label === "Offline sale" ? "offline" : "online"}" data-sale-index="${itemIndex}"><span>${item.label}<small>${new Date(item.date).toLocaleString()}</small></span><strong>KSh ${item.total.toLocaleString()}</strong></button>`; }).join("") : "<p>No sales recorded yet.</p>"; recent.querySelectorAll(".dashboard-sale-row").forEach(function(row) { row.addEventListener("click", function() { const item = activity[Number(row.dataset.saleIndex)]; if (item) showSaleDetails(item); }); }); }
+        updateDashboard();
     }).catch(function() { if (recent) recent.innerHTML = "<p>Sales activity unavailable.</p>"; }).finally(function() { dashboardDetailsRequest = null; });
     return dashboardDetailsRequest;
 }
@@ -2256,28 +2262,33 @@ deleteReview = async function(reviewId) {
 }
 
 updateDashboard = function() {
-    const counts = { Pending: 0, Processing: 0, Completed: 0 };
-    let totalSales = 0;
-    sharedOrders.forEach(function(order) {
-        const status = order.status || "Pending";
-        if (Object.prototype.hasOwnProperty.call(counts, status)) counts[status]++;
-        if (status === "Completed") totalSales += Number(order.total) || 0;
-    });
+    const report = monthlySalesReportCache;
+    const counts = report.order_counts || { Pending: 0, Processing: 0, Completed: 0 };
     const values = {
         "total-products": products.length,
-        "total-orders": sharedOrders.length,
+        "total-orders": Number(report.order_count) || 0,
         "pending-orders": counts.Pending,
         "processing-orders": counts.Processing,
         "completed-orders": counts.Completed,
-        "total-sales": (totalSales + offlineSalesCache.reduce(function(sum, sale) { return sum + (Number(sale.total) || 0); }, 0)).toLocaleString(),
-        "offline-sales-total": offlineSalesCache.reduce(function(sum, sale) { return sum + (Number(sale.total) || 0); }, 0).toLocaleString(),
-        "online-sales-total": totalSales.toLocaleString()
+        "total-sales": (Number(report.total_sales) || 0).toLocaleString(),
+        "offline-sales-total": (Number(report.offline_sales) || 0).toLocaleString(),
+        "online-sales-total": (Number(report.online_sales) || 0).toLocaleString()
     };
     refreshDashboardDetails();
     Object.keys(values).forEach(function(id) {
         const element = document.getElementById(id);
         if (element) element.textContent = values[id];
     });
+    const periodLabel = document.getElementById("sales-period-label");
+    if (periodLabel && report.month) {
+        const [year, monthNumber] = report.month.split("-").map(Number);
+        const monthName = new Intl.DateTimeFormat("en-KE", { month: "short", timeZone: "Africa/Nairobi" }).format(new Date(`${report.month}-01T00:00:00+03:00`));
+        const firstDay = new Intl.DateTimeFormat("en-KE", { day: "numeric", timeZone: "Africa/Nairobi" }).format(new Date(report.period_start));
+        const lastDay = new Date(Date.UTC(year, monthNumber, 0)).getUTCDate();
+        const nextMonth = monthNumber === 12 ? `${year + 1}-01` : `${year}-${String(monthNumber + 1).padStart(2, "0")}`;
+        const resetDate = new Intl.DateTimeFormat("en-KE", { day: "numeric", month: "short", timeZone: "Africa/Nairobi" }).format(new Date(`${nextMonth}-01T00:00:00+03:00`));
+        periodLabel.textContent = `Evaluation totals · ${firstDay}–${lastDay} ${monthName} ${year} · resets ${resetDate}`;
+    }
 }
 
 function loadSharedAdminData() {

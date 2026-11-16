@@ -85,7 +85,17 @@
             text(46, y, `${doc.kind} ${doc.number}${first ? "" : " (continued)"}`, 16, true);
             text(380, y, dateText(doc.date), 9, false);
             y -= 25;
-            if (first) {
+            if (first && doc.report) {
+                text(46, y, `Reporting period: ${doc.report.period}`, 10, true);
+                y -= 17;
+                [
+                    `Orders placed: ${doc.report.orderCount} (pending ${doc.report.pending}, processing ${doc.report.processing}, completed ${doc.report.completed}, other ${doc.report.other}).`,
+                    `Completed online orders: ${doc.report.completedOnlineOrders}; online sales: ${money(doc.report.onlineSales)}.`,
+                    `Offline sales: ${doc.report.offlineSaleCount}; offline sales total: ${money(doc.report.offlineSales)}.`,
+                    `Total recorded sales: ${money(doc.report.totalSales)}.`
+                ].forEach(function(summary) { pdfWrap(summary, 88).forEach(function(part) { text(46, y, part, 9, false); y -= 13; }); });
+                y -= 7;
+            } else if (first) {
                 text(46, y, `Customer: ${doc.customer?.name || "Walk-in customer"}`, 10, true);
                 y -= 15;
                 if (doc.customer?.phone) { text(46, y, `Phone: ${doc.customer.phone}`, 9, false); y -= 13; }
@@ -96,10 +106,18 @@
                 if (doc.paymentStatus) text(320, y - 13, `Status: ${doc.paymentStatus}`, 9, false);
                 y -= 18;
             }
-            text(46, y, "Product", 9, true);
-            text(345, y, "Qty", 9, true);
-            text(390, y, "Unit price", 9, true);
-            text(482, y, "Amount", 9, true);
+            if (doc.report) {
+                text(46, y, "Date", 8, true);
+                text(103, y, "Channel / reference", 8, true);
+                text(300, y, "Customer", 8, true);
+                text(423, y, "Status", 8, true);
+                text(490, y, "Amount", 8, true);
+            } else {
+                text(46, y, "Product", 9, true);
+                text(345, y, "Qty", 9, true);
+                text(390, y, "Unit price", 9, true);
+                text(482, y, "Amount", 9, true);
+            }
             y -= 8;
             line(46, y, 549, y);
             y -= 17;
@@ -109,6 +127,22 @@
         };
         startPage(true);
         (Array.isArray(doc.items) ? doc.items : []).forEach(function(item) {
+            if (doc.report) {
+                const dateLines = pdfWrap(item.date || "", 9);
+                const referenceLines = pdfWrap(`${item.channel || ""} ${item.reference || ""}`, 29);
+                const customerLines = pdfWrap(item.customer || "", 18);
+                const statusLines = pdfWrap(item.status || "", 12);
+                const rowHeight = Math.max(dateLines.length, referenceLines.length, customerLines.length, statusLines.length) * 13 + 8;
+                ensureSpace(rowHeight);
+                dateLines.forEach((part, index) => text(46, y - index * 13, part, 8, false));
+                referenceLines.forEach((part, index) => text(103, y - index * 13, part, 8, false));
+                customerLines.forEach((part, index) => text(300, y - index * 13, part, 8, false));
+                statusLines.forEach((part, index) => text(423, y - index * 13, part, 8, false));
+                text(490, y, money(item.total), 8, false);
+                y -= rowHeight;
+                line(46, y + 4, 549, y + 4);
+                return;
+            }
             const quantity = Number(item.quantity) || 0;
             const unit = Number(item.unitPrice ?? item.price) || 0;
             const amount = Number(item.lineTotal) || quantity * unit;
@@ -383,6 +417,44 @@
         }
     };
 
+    const reportMonthInput = document.getElementById("salesReportMonth");
+    const reportStatus = document.getElementById("salesReportStatus");
+    const currentNairobiMonth = function() {
+        const parts = new Intl.DateTimeFormat("en-CA", { timeZone: "Africa/Nairobi", year: "numeric", month: "2-digit" }).formatToParts(new Date());
+        return `${parts.find(part => part.type === "year")?.value}-${parts.find(part => part.type === "month")?.value}`;
+    };
+    if (reportMonthInput) {
+        reportMonthInput.value = currentNairobiMonth();
+        reportMonthInput.max = currentNairobiMonth();
+    }
+    document.getElementById("saveMonthlySalesReport")?.addEventListener("click", async function() {
+        if (!reportMonthInput?.value) { reportStatus.textContent = "Choose a month for the report."; return; }
+        const button = document.getElementById("saveMonthlySalesReport");
+        button.disabled = true;
+        reportStatus.textContent = "Preparing monthly sales report…";
+        try {
+            const report = await apiRequest(`/api/admin/sales-report?month=${encodeURIComponent(reportMonthInput.value)}`);
+            if (reportMonthInput.min && report.month < reportMonthInput.min) throw new Error("Reports are available from the evaluation start date onward.");
+            const formatDate = function(value) { return new Date(value).toLocaleDateString("en-KE", { timeZone: "Africa/Nairobi", day: "numeric", month: "short", year: "numeric" }); };
+            const items = (report.transactions || []).map(function(item) {
+                const date = new Date(item.created_at).toLocaleDateString("en-KE", { timeZone: "Africa/Nairobi", day: "2-digit", month: "short", year: "numeric" });
+                return { date, channel: item.channel, reference: item.reference, customer: item.customer_name, status: item.status, total: Number(item.total) || 0 };
+            });
+            const file = buildPdfFile({
+                kind: "Monthly Sales Report", number: report.month, date: new Date().toISOString(), items, total: report.total_sales, store: report.store,
+                report: {
+                    period: `${formatDate(report.period_start)} to ${formatDate(report.period_end)} (${report.timezone})`,
+                    orderCount: report.order_count, pending: report.order_counts.Pending, processing: report.order_counts.Processing, completed: report.order_counts.Completed,
+                    other: report.other_order_count, completedOnlineOrders: report.completed_online_orders, onlineSales: report.online_sales,
+                    offlineSaleCount: report.offline_sale_count, offlineSales: report.offline_sales, totalSales: report.total_sales
+                }
+            });
+            savePdfFile(file);
+            reportStatus.textContent = `${file.name} downloaded. The PDF includes the monthly totals and sales transaction list.`;
+        } catch (error) { reportStatus.textContent = error.message || "Could not create the monthly sales report."; }
+        finally { button.disabled = false; }
+    });
+
     document.addEventListener("admin:view", function(event) {
         if (event.detail === "quotations") {
             if (!quoteRows.childElementCount) loadProducts().then(addQuoteItem).catch(error => { quoteStatus.textContent = error.message; });
@@ -390,6 +462,13 @@
             loadStoreProfile().catch(error => { profileStatus.textContent = error.message; });
         }
         if (event.detail === "receipts") loadReceipts();
+        if (event.detail === "reports" && reportMonthInput) {
+            reportMonthInput.value = currentNairobiMonth();
+            apiRequest(`/api/admin/sales-report?month=${encodeURIComponent(reportMonthInput.value)}`).then(function(report) {
+                reportMonthInput.min = String(report.reporting_start_at || "").slice(0, 7);
+                reportStatus.textContent = `Evaluation tracking began ${dateText(report.reporting_start_at)}. Earlier transaction history is preserved.`;
+            }).catch(function(error) { reportStatus.textContent = error.message; });
+        }
         if (event.detail === "settings") loadStoreProfile().catch(error => { profileStatus.textContent = error.message; });
     });
 })();
