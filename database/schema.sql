@@ -33,6 +33,11 @@ CREATE TABLE offline_sale_items (
   shortage INTEGER NOT NULL DEFAULT 0 CHECK (shortage >= 0),
   line_total NUMERIC(12, 2) NOT NULL CHECK (line_total >= 0)
 );
+
+CREATE TABLE admin_sales_reporting_settings (
+  id SMALLINT PRIMARY KEY CHECK (id = 1),
+  reporting_start_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+);
 CREATE TABLE orders (
   id BIGSERIAL PRIMARY KEY,
   customer_name TEXT NOT NULL,

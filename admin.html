@@ -17,7 +17,7 @@
 
     <link
         rel="stylesheet"
-        href="admin.css?v=20261111-quotation-product-search"
+        href="admin.css?v=20261116-monthly-sales-reports"
     >
 
 </head>
@@ -77,6 +77,7 @@
             <h2>
                 Business Overview
             </h2>
+            <p id="sales-period-label" class="sales-period-label" aria-live="polite">Current evaluation period</p>
 
 
             <div class="dashboard-cards">
@@ -231,7 +232,7 @@
         <section class="dashboard-detail-grid" id="dashboard-details">
             <article class="dashboard-detail-card"><h3>Sales overview</h3><div class="sales-overview-bars"><span style="height:35%"></span><span style="height:58%"></span><span style="height:44%"></span><span style="height:78%"></span><span style="height:64%"></span><span style="height:88%"></span><span style="height:72%"></span></div><p>Online and offline sales performance</p></article>
             <article class="dashboard-detail-card" id="inventory-panel"><h3>Low-stock products</h3><div id="low-stock-list"><p>Stock alerts will appear here.</p></div></article>
-            <article class="dashboard-detail-card" id="sales-reports"><h3>Recent online/offline sales</h3><div id="recent-sales-list"><p>Recent activity will appear here.</p></div></article>
+            <article class="dashboard-detail-card" id="sales-reports"><h3>Recent online/offline sales</h3><div id="recent-sales-list"><p>Recent activity will appear here.</p></div><div class="monthly-report-controls"><h4>Monthly Sales Report</h4><label for="salesReportMonth">Report month</label><input id="salesReportMonth" type="month"><button id="saveMonthlySalesReport" type="button">Save Monthly Report PDF</button><p id="salesReportStatus" role="status" aria-live="polite"></p></div></article>
         </section>
         <section class="admin-section inventory-workspace" id="inventory-workspace" hidden>
             <h2>Inventory</h2>
@@ -717,10 +718,10 @@
     ========================== -->
 
     <script src="api-config.js"></script>
-    <script src="admin.js?v=20261110-admin-documents"></script>
+    <script src="admin.js?v=20261116-monthly-sales-reports"></script>
     <script src="admin-editor.js?v=20261110-admin-documents"></script>
     <script src="admin-login.js?v=20261110-admin-documents"></script>
-    <script src="admin-documents.js?v=20261111-quotation-product-search"></script>
+    <script src="admin-documents.js?v=20261116-monthly-sales-reports"></script>
 
 
 </body>
@@ -728,7 +729,7 @@
 </html>
 
 <script src="admin-access.js"></script>
-<script src="admin-pwa.js?v=20261110-admin-documents"></script>
+<script src="admin-pwa.js?v=20261116-monthly-sales-reports"></script>
 
 
 

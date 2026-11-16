@@ -127,6 +127,13 @@ const ensureSharedDataSchema = async () => {
   await pool.query("CREATE INDEX IF NOT EXISTS offline_sales_created_at_index ON offline_sales (created_at DESC)");
   await pool.query("CREATE INDEX IF NOT EXISTS offline_sale_items_sale_id_index ON offline_sale_items (sale_id)");
   await pool.query(`
+    CREATE TABLE IF NOT EXISTS admin_sales_reporting_settings (
+      id SMALLINT PRIMARY KEY CHECK (id = 1),
+      reporting_start_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+    )
+  `);
+  await pool.query("INSERT INTO admin_sales_reporting_settings (id) VALUES (1) ON CONFLICT (id) DO NOTHING");
+  await pool.query(`
     CREATE TABLE IF NOT EXISTS store_profile (
       id SMALLINT PRIMARY KEY CHECK (id = 1),
       store_name TEXT NOT NULL DEFAULT '',
@@ -730,6 +737,53 @@ app.post("/api/orders/mine", asyncRoute(async (req, res) => {
 app.get("/api/orders", isAdmin, asyncRoute(async (_req, res) => {
   const { rows } = await pool.query("SELECT * FROM orders ORDER BY created_at DESC");
   res.json(rows.map(serializeOrder));
+}));
+
+app.get("/api/admin/sales-report", isAdmin, asyncRoute(async (req, res) => {
+  const now = new Date();
+  const localMonthParts = new Intl.DateTimeFormat("en-CA", { timeZone: "Africa/Nairobi", year: "numeric", month: "2-digit" }).formatToParts(now);
+  const currentMonth = `${localMonthParts.find(part => part.type === "year")?.value}-${localMonthParts.find(part => part.type === "month")?.value}`;
+  const month = String(req.query.month || currentMonth);
+  if (!/^\d{4}-(0[1-9]|1[0-2])$/.test(month)) return res.status(400).json({ error: "Choose a valid report month." });
+  const [year, monthNumber] = month.split("-").map(Number);
+  const monthStart = new Date(`${month}-01T00:00:00+03:00`);
+  const nextMonth = monthNumber === 12 ? `${year + 1}-01` : `${year}-${String(monthNumber + 1).padStart(2, "0")}`;
+  const monthEnd = new Date(`${nextMonth}-01T00:00:00+03:00`);
+  const reportEnd = new Date(Math.min(monthEnd.getTime(), now.getTime()));
+  const settingsResult = await pool.query("SELECT reporting_start_at FROM admin_sales_reporting_settings WHERE id=1");
+  const reportingStartAt = settingsResult.rows[0]?.reporting_start_at || now.toISOString();
+  const startTime = Math.max(monthStart.getTime(), new Date(reportingStartAt).getTime());
+  const reportStart = new Date(Math.min(startTime, reportEnd.getTime()));
+  const range = [reportStart.toISOString(), reportEnd.toISOString()];
+  const [statuses, online, offline, transactions, storeResult] = await Promise.all([
+    pool.query("SELECT status, COUNT(*)::int AS count FROM orders WHERE created_at >= $1 AND created_at < $2 GROUP BY status", range),
+    pool.query("SELECT COUNT(*)::int AS count, COALESCE(SUM(total),0)::numeric AS total FROM orders WHERE COALESCE(completed_at,created_at) >= $1 AND COALESCE(completed_at,created_at) < $2 AND status='Completed'", range),
+    pool.query("SELECT COUNT(*)::int AS count, COALESCE(SUM(total),0)::numeric AS total FROM offline_sales WHERE created_at >= $1 AND created_at < $2", range),
+    pool.query(`
+      SELECT 'Offline sale' AS channel, ('Sale #' || s.id::text) AS reference, COALESCE(s.customer_name, 'Walk-in customer') AS customer_name,
+        'Recorded' AS status, s.total::numeric AS total, s.created_at
+      FROM offline_sales s WHERE s.created_at >= $1 AND s.created_at < $2
+      UNION ALL
+      SELECT 'Online order' AS channel, COALESCE('Order No.' || LPAD(o.order_number::text, 3, '0'), 'Order #' || o.id::text) AS reference, o.customer_name,
+        o.status, o.total::numeric AS total, COALESCE(o.completed_at,o.created_at) AS created_at
+      FROM orders o WHERE COALESCE(o.completed_at,o.created_at) >= $1 AND COALESCE(o.completed_at,o.created_at) < $2 AND o.status='Completed'
+      ORDER BY created_at ASC
+    `, range),
+    pool.query("SELECT store_name AS name, store_address AS address, store_phone AS phone, store_email AS email FROM store_profile WHERE id=1")
+  ]);
+  const orderCounts = { Pending: 0, Processing: 0, Completed: 0 };
+  statuses.rows.forEach(row => { if (Object.hasOwn(orderCounts, row.status)) orderCounts[row.status] = Number(row.count); });
+  const onlineTotal = Number(online.rows[0]?.total || 0);
+  const offlineTotal = Number(offline.rows[0]?.total || 0);
+  res.json({
+    month, timezone: "Africa/Nairobi", period_start: reportStart.toISOString(), period_end: reportEnd.toISOString(), reporting_start_at: reportingStartAt,
+    order_count: statuses.rows.reduce((sum, row) => sum + Number(row.count || 0), 0), order_counts: orderCounts,
+    other_order_count: statuses.rows.reduce((sum, row) => sum + (Object.hasOwn(orderCounts, row.status) ? 0 : Number(row.count || 0)), 0),
+    completed_online_orders: Number(online.rows[0]?.count || 0), offline_sale_count: Number(offline.rows[0]?.count || 0),
+    online_sales: onlineTotal, offline_sales: offlineTotal, total_sales: onlineTotal + offlineTotal,
+    transactions: transactions.rows.map(row => ({ ...row, total: Number(row.total) })),
+    store: storeResult.rows[0] || { name: "Ray's Enterprise", address: "", phone: "", email: "" }
+  });
 }));
 
 app.post("/api/orders", asyncRoute(async (req, res) => {
